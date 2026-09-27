@@ -1,179 +1,316 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class PetCareGUI extends JFrame {
     private JTextField txtOwner, txtPetName, txtWeight;
     private JComboBox<String> cbPetType, cbGrooming;
     private JCheckBox chkVaccine, chkFood;
-    private JTextArea txtReceipt;
+    private JTextArea txtSummary;
+    private JLabel lblTotal;
+    private JButton btnCetak;
+
+    private double currentTotal = 0;
+    private PasienHewan currentPasien;
+    private LayananGrooming currentGrooming;
 
     public PetCareGUI() {
-        setTitle("PetCare Vet Clinic & Grooming");
-        setSize(550, 650);
+        // 1. Inisialisasi Tema FlatLaf Light
+        UIHelper.setupFlatLaf();
+
+        setTitle("PetCare Clinic & Grooming - Dashboard");
+        setSize(950, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+        
+        // Root Panel
+        JPanel rootPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        rootPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
+        rootPanel.setBackground(new Color(245, 247, 250)); // Light modern background
+        setContentPane(rootPanel);
 
-        // Panel Input
-        JPanel pnlInput = new JPanel(new GridLayout(7, 2, 10, 10));
-        pnlInput.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
-
-        pnlInput.add(new JLabel("Nama Pemilik:"));
-        txtOwner = new JTextField();
-        pnlInput.add(txtOwner);
-
-        pnlInput.add(new JLabel("Nama Hewan:"));
-        txtPetName = new JTextField();
-        pnlInput.add(txtPetName);
-
-        pnlInput.add(new JLabel("Jenis Hewan:"));
-        String[] types = {"Kucing", "Anjing", "Kelinci"};
-        cbPetType = new JComboBox<>(types);
-        pnlInput.add(cbPetType);
-
-        pnlInput.add(new JLabel("Bobot Hewan (kg):"));
-        txtWeight = new JTextField();
-        pnlInput.add(txtWeight);
-
-        pnlInput.add(new JLabel("Paket Grooming:"));
-        String[] groomingPackages = {"Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku"};
-        cbGrooming = new JComboBox<>(groomingPackages);
-        pnlInput.add(cbGrooming);
-
-        pnlInput.add(new JLabel("Layanan Tambahan:"));
+        // --- KIRI: FORM INPUT (refactored with GridBagLayout + explicit insets) ---
+        JPanel pnlForm = new JPanel(new BorderLayout());
+        pnlForm.setOpaque(false);
+        
+        // Panel input menggunakan GridBagLayout dengan insets eksplisit
+        JPanel pnlInput = new JPanel(new GridBagLayout());
+        pnlInput.setBackground(Color.WHITE);
+        pnlInput.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
+                new EmptyBorder(20, 20, 20, 20)
+        ));
+        pnlInput.putClientProperty("FlatLaf.style", "arc: 20");
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        // Insets default: top=10, left=15, bottom=15, right=15 (sesuai kriteria)
+        Insets defaultInsets = new Insets(10, 15, 15, 15);
+        gbc.insets = defaultInsets;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        int row = 0;
+        
+        // Header di baris pertama
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        JLabel lblHeaderForm = UIHelper.createHeaderLabel("🐶 Registrasi Layanan");
+        pnlInput.add(lblHeaderForm, gbc);
+        
+        // Row 1: Nama Pemilik
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
+        addFormRow(pnlInput, gbc, "Nama Pemilik", txtOwner = new JTextField());
+        
+        // Row 2: Nama Hewan
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
+        addFormRow(pnlInput, gbc, "Nama Hewan", txtPetName = new JTextField());
+        
+        // Row 3: Jenis Hewan
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
+        addFormRow(pnlInput, gbc, "Jenis Hewan", cbPetType = new JComboBox<>(new String[]{"Kucing", "Anjing", "Kelinci", "Burung", "Lainnya"}));
+        
+        // Row 4: Bobot Hewan
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
+        addFormRow(pnlInput, gbc, "Bobot Hewan (kg)", txtWeight = new JTextField());
+        
+        // Row 5: Paket Grooming
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
+        addFormRow(pnlInput, gbc, "Paket Grooming", cbGrooming = new JComboBox<>(new String[]{"Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku", "Full Grooming"}));
+        
+        // Row 6: Layanan Tambahan
+        gbc.gridy = ++row; gbc.weightx = 1.0;
+        gbc.insets = defaultInsets;
         JPanel pnlExtras = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlExtras.setOpaque(false);
         chkVaccine = new JCheckBox("Vaksinasi");
-        chkFood = new JCheckBox("Pakan Hewan");
+        chkFood = new JCheckBox("Pakan");
+        chkVaccine.setFont(new Font("Inter", Font.PLAIN, 14));
+        chkFood.setFont(new Font("Inter", Font.PLAIN, 14));
         pnlExtras.add(chkVaccine);
+        pnlExtras.add(Box.createRigidArea(new Dimension(20, 0)));
         pnlExtras.add(chkFood);
-        pnlInput.add(pnlExtras);
+        addFormRow(pnlInput, gbc, "Layanan Tambahan", pnlExtras);
 
-        JButton btnCalculate = new JButton("Hitung Tarif & Cetak Nota");
-        btnCalculate.setBackground(new Color(70, 130, 180));
-        btnCalculate.setForeground(Color.WHITE);
-        btnCalculate.setFont(new Font("Arial", Font.BOLD, 12));
+        // Filler dengan weighty = 1.0 untuk mendorong form ke atas
+        gbc.gridy = ++row; gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.insets = defaultInsets;
+        pnlInput.add(new JLabel(), gbc);
+
+        pnlForm.add(pnlInput, BorderLayout.CENTER);
+        rootPanel.add(pnlForm);
+
+
+        // --- KANAN: LIVE SUMMARY & INVOICE ---
+        JPanel pnlRight = new JPanel(new BorderLayout(0, 20));
+        pnlRight.setOpaque(false);
         
-        pnlInput.add(new JLabel()); // Space
-        pnlInput.add(btnCalculate);
+        JLabel lblHeaderSummary = UIHelper.createHeaderLabel("🧾 Ringkasan Tagihan");
+        lblHeaderSummary.setBorder(new EmptyBorder(0, 0, 0, 0));
+        pnlRight.add(lblHeaderSummary, BorderLayout.NORTH);
 
-        add(pnlInput, BorderLayout.NORTH);
+        JPanel pnlSummaryCard = new JPanel(new BorderLayout());
+        pnlSummaryCard.setBackground(Color.WHITE);
+        pnlSummaryCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
+                new EmptyBorder(25, 25, 25, 25)
+        ));
+        pnlSummaryCard.putClientProperty("FlatLaf.style", "arc: 20");
 
-        // Panel Receipt
-        txtReceipt = new JTextArea();
-        txtReceipt.setEditable(false);
-        txtReceipt.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        txtReceipt.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtSummary = new JTextArea();
+        txtSummary.setEditable(false);
+        txtSummary.setFont(new Font("Consolas", Font.PLAIN, 15));
+        txtSummary.setForeground(new Color(60, 70, 80));
+        txtSummary.setOpaque(false);
+        txtSummary.setText("Silakan lengkapi form di sebelah kiri\nuntuk melihat ringkasan tagihan.");
         
-        JScrollPane scrollPane = new JScrollPane(txtReceipt);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Nota Pemeriksaan / Layanan"));
-        add(scrollPane, BorderLayout.CENTER);
+        pnlSummaryCard.add(txtSummary, BorderLayout.CENTER);
 
-        // Action Listener
-        btnCalculate.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                calculateAndPrint();
-            }
+        // Bagian Bawah Summary (Total & Tombol)
+        JPanel pnlBottomSummary = new JPanel(new BorderLayout(0, 15));
+        pnlBottomSummary.setOpaque(false);
+        
+        JPanel pnlTotal = new JPanel(new BorderLayout());
+        pnlTotal.setOpaque(false);
+        JLabel lblTotalTitle = new JLabel("TOTAL PEMBAYARAN");
+        lblTotalTitle.setFont(new Font("Inter", Font.BOLD, 14));
+        lblTotalTitle.setForeground(new Color(120, 130, 140));
+        
+        lblTotal = UIHelper.createTotalLabel();
+        
+        pnlTotal.add(lblTotalTitle, BorderLayout.NORTH);
+        pnlTotal.add(lblTotal, BorderLayout.CENTER);
+        pnlTotal.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)));
+        pnlTotal.add(Box.createVerticalStrut(15), BorderLayout.NORTH);
+
+        btnCetak = UIHelper.createPrimaryButton("Cetak Nota");
+        btnCetak.setEnabled(false); // Disabled by default
+
+        pnlBottomSummary.add(pnlTotal, BorderLayout.CENTER);
+        pnlBottomSummary.add(btnCetak, BorderLayout.SOUTH);
+
+        pnlSummaryCard.add(pnlBottomSummary, BorderLayout.SOUTH);
+        pnlRight.add(pnlSummaryCard, BorderLayout.CENTER);
+        
+        rootPanel.add(pnlRight);
+
+        // --- SETUP LISTENER (INTERAKTIVITAS REAL-TIME) ---
+        setupRealTimeListeners();
+        
+        // Cetak Action
+        btnCetak.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, 
+                "Nota berhasil dicetak!\n\n" + txtSummary.getText() + "\nTotal: Rp " + String.format("%,.0f", currentTotal), 
+                "Sukses", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 
-    private void calculateAndPrint() {
-        try {
-            String owner = txtOwner.getText().trim();
-            String petName = txtPetName.getText().trim();
-            
-            if (owner.isEmpty() || petName.isEmpty() || txtWeight.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Mohon lengkapi semua data input!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, String labelText, JComponent comp) {
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        JLabel label = new JLabel(labelText);
+        UIHelper.styleFormLabel(label);
+        panel.add(label, gbc);
 
-            String petType = cbPetType.getSelectedItem().toString();
-            double weight = Double.parseDouble(txtWeight.getText().trim());
+        gbc.gridy = row + 1; gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.anchor = GridBagConstraints.WEST;
+        // Beri margin bawah antar baris
+        gbc.insets = new Insets(5, 10, 15, 10);
+        panel.add(comp, gbc);
+        gbc.insets = new Insets(10, 10, 0, 10); // Reset for next label
+    }
 
-            if (weight <= 0) {
-                JOptionPane.showMessageDialog(this, "Bobot hewan harus lebih besar dari 0!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+    private void setupRealTimeListeners() {
+        // Document Listener untuk semua input teks
+        DocumentListener docListener = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { calculateLive(); }
+            public void removeUpdate(DocumentEvent e) { calculateLive(); }
+            public void changedUpdate(DocumentEvent e) { calculateLive(); }
+        };
+        
+        txtOwner.getDocument().addDocumentListener(docListener);
+        txtPetName.getDocument().addDocumentListener(docListener);
+        txtWeight.getDocument().addDocumentListener(docListener);
 
-            // Instansiasi Object PasienHewan
-            PasienHewan pasien = new PasienHewan(petName, petType, owner, weight);
+        // Action Listener untuk combo box & checkbox
+        cbPetType.addActionListener(e -> calculateLive());
+        cbGrooming.addActionListener(e -> calculateLive());
+        chkVaccine.addActionListener(e -> calculateLive());
+        chkFood.addActionListener(e -> calculateLive());
+    }
 
-            String selectedGrooming = cbGrooming.getSelectedItem().toString();
-            double baseGroomingCost = 0;
+    private void calculateLive() {
+        String owner = txtOwner.getText().trim();
+        String petName = txtPetName.getText().trim();
+        String weightText = txtWeight.getText().trim();
 
-            switch (selectedGrooming) {
-                case "Mandi Kutu": baseGroomingCost = 50000; break;
-                case "Potong Bulu": baseGroomingCost = 40000; break;
-                case "Potong Kuku": baseGroomingCost = 25000; break;
-            }
+        boolean isValid = true;
 
-            // Kategori Bobot: Jika >= 5kg maka ada biaya tambahan layanan
-            double weightSurcharge = (weight >= 5.0) ? 20000 : 0;
-            
-            double groomingCost = 0;
-            LayananGrooming grooming = null;
-            if (baseGroomingCost > 0) {
-                groomingCost = baseGroomingCost + weightSurcharge;
-                // Instansiasi Object LayananGrooming
-                grooming = new LayananGrooming(selectedGrooming, groomingCost);
-            }
+        // Reset visual validation
+        UIHelper.setInvalidBorder(txtWeight, false);
+        UIHelper.setInvalidBorder(txtOwner, false);
+        UIHelper.setInvalidBorder(txtPetName, false);
 
-            // Tarif vaksinasi (misal jika >5kg biaya vaksin juga nambah)
-            double vaccineCost = chkVaccine.isSelected() ? (100000 + weightSurcharge) : 0;
-            
-            // Tarif Pakan (harga flat)
-            double foodCost = chkFood.isSelected() ? 50000 : 0;
-
-            double totalCost = groomingCost + vaccineCost + foodCost;
-
-            // Cetak Nota
-            StringBuilder nota = new StringBuilder();
-            nota.append("==================================================\n");
-            nota.append("           PETCARE VET CLINIC & GROOMING          \n");
-            nota.append("==================================================\n");
-            nota.append(String.format("Nama Pemilik   : %s\n", pasien.getNamaOwner()));
-            nota.append(String.format("Nama Hewan     : %s\n", pasien.getNamaPeliharaan()));
-            nota.append(String.format("Jenis Hewan    : %s\n", pasien.getJenisHewan()));
-            nota.append(String.format("Bobot Hewan    : %.2f kg\n", pasien.getBobotKg()));
-            nota.append(String.format("Kategori Bobot : %s\n", weight >= 5.0 ? ">= 5 kg (Biaya Tambahan Rp 20.000/layanan)" : "< 5 kg (Normal)"));
-            nota.append("--------------------------------------------------\n");
-            
-            if (grooming != null) {
-                nota.append(String.format("Layanan Grooming (%s)  : Rp %,.2f\n", grooming.getPaket(), grooming.getBiayaLayanan()));
-            } else {
-                nota.append("Layanan Grooming           : Tidak Ada\n");
-            }
-
-            if (chkVaccine.isSelected()) {
-                nota.append(String.format("Vaksinasi                  : Rp %,.2f\n", vaccineCost));
-            }
-
-            if (chkFood.isSelected()) {
-                nota.append(String.format("Pembelian Pakan Hewan      : Rp %,.2f\n", foodCost));
-            }
-            
-            nota.append("--------------------------------------------------\n");
-            nota.append(String.format("TOTAL TAGIHAN              : Rp %,.2f\n", totalCost));
-            nota.append("==================================================\n");
-            nota.append("       Terima Kasih Atas Kepercayaan Anda!        \n");
-
-            txtReceipt.setText(nota.toString());
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format bobot hewan tidak valid! Masukkan angka yang benar.", "Error", JOptionPane.ERROR_MESSAGE);
+        if (owner.isEmpty()) {
+            UIHelper.setInvalidBorder(txtOwner, true);
+            isValid = false;
         }
+        if (petName.isEmpty()) {
+            UIHelper.setInvalidBorder(txtPetName, true);
+            isValid = false;
+        }
+
+        double weight = 0;
+        if (weightText.isEmpty()) {
+            UIHelper.setInvalidBorder(txtWeight, true);
+            isValid = false;
+        } else {
+            try {
+                weight = Double.parseDouble(weightText);
+                if (weight <= 0) {
+                    UIHelper.setInvalidBorder(txtWeight, true);
+                    isValid = false;
+                }
+            } catch (NumberFormatException ex) {
+                UIHelper.setInvalidBorder(txtWeight, true);
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            btnCetak.setEnabled(false);
+            lblTotal.setText("Rp 0");
+            txtSummary.setText("Data belum lengkap atau format tidak valid.\nSilakan lengkapi form dengan benar.");
+            return;
+        }
+
+        // --- KALKULASI ---
+        String petType = cbPetType.getSelectedItem().toString();
+        currentPasien = new PasienHewan(petName, petType, owner, weight);
+        
+        String selectedGrooming = cbGrooming.getSelectedItem().toString();
+        double baseGroomingCost = 0;
+
+        switch (selectedGrooming) {
+            case "Mandi Kutu": baseGroomingCost = 50000; break;
+            case "Potong Bulu": baseGroomingCost = 40000; break;
+            case "Potong Kuku": baseGroomingCost = 25000; break;
+            case "Full Grooming": baseGroomingCost = 100000; break;
+        }
+
+        double weightSurcharge = (weight >= 5.0) ? 20000 : 0;
+        double groomingCost = 0;
+        
+        if (baseGroomingCost > 0) {
+            groomingCost = baseGroomingCost + weightSurcharge;
+            currentGrooming = new LayananGrooming(selectedGrooming, groomingCost);
+        } else {
+            currentGrooming = null;
+        }
+
+        double vaccineCost = chkVaccine.isSelected() ? (100000 + weightSurcharge) : 0;
+        double foodCost = chkFood.isSelected() ? 50000 : 0;
+        
+        currentTotal = groomingCost + vaccineCost + foodCost;
+
+        // --- UPDATE SUMMARY UI ---
+        StringBuilder sb = new StringBuilder();
+        sb.append("PASIEN:\n");
+        sb.append(String.format("• Nama    : %s (%s)\n", currentPasien.getNamaPeliharaan(), currentPasien.getJenisHewan()));
+        sb.append(String.format("• Owner   : %s\n", currentPasien.getNamaOwner()));
+        sb.append(String.format("• Bobot   : %.1f kg\n\n", currentPasien.getBobotKg()));
+        
+        sb.append("RINCIAN BIAYA:\n");
+        if (currentGrooming != null) {
+            sb.append(String.format("• %-20s : Rp %,.0f\n", "Grooming (" + currentGrooming.getPaket() + ")", currentGrooming.getBiayaLayanan()));
+        }
+        if (chkVaccine.isSelected()) {
+            sb.append(String.format("• %-20s : Rp %,.0f\n", "Vaksinasi", vaccineCost));
+        }
+        if (chkFood.isSelected()) {
+            sb.append(String.format("• %-20s : Rp %,.0f\n", "Pakan", foodCost));
+        }
+        
+        if (weight >= 5.0 && (currentGrooming != null || chkVaccine.isSelected())) {
+            sb.append("\n*Surcharge >5kg diterapkan pada \n layanan medis/grooming.");
+        }
+
+        txtSummary.setText(sb.toString());
+        lblTotal.setText(String.format("Rp %,.0f", currentTotal));
+        
+        btnCetak.setEnabled(true);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             new PetCareGUI().setVisible(true);
         });
     }
 }
+
