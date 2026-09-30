@@ -1,104 +1,151 @@
-# PetCare Vet Clinic & Grooming
+﻿# BluePaw Vet & Grooming
 
-## Overview
-Aplikasi desktop Java Swing untuk manajemen klinik dokter hewan & layanan grooming hewan peliharaan (**PetCare Vet Clinic & Grooming**). Menggunakan framework Look-and-Feel modern **FlatLaf** dengan implementasi **Custom Blue Palette** yang diatur via `UIManager.put(...)` sebelum inisialisasi tema, struktur navigasi multi-tab (**JTabbedPane**), sistem pembayaran interaktif (**Cash & QRIS Digital**), serta pencatatan riwayat pemesanan berbasis tabel (**JTable CRUD**).
-
----
-
-## 🎨 Pembaruan Desain UI (Custom Blue Palette & UIManager Fix)
-
-Untuk memastikan palet warna kustom tidak tertimpa oleh tema bawaan FlatLaf, seluruh pengaturan warna didaftarkan menggunakan `UIManager.put(...)` **sebelum** pemanggilan `FlatMacLightLaf.setup()` / inisialisasi frame utama.
-
-### 1. Spesifikasi Palet Warna (Hex Code)
-| Elemen UI | Hex Code | Properti FlatLaf / Peran |
-|-----------|----------|--------------------------|
-| **Background Utama** | `#FFFFFF` | `"RootPane.background"`, `"ScrollPane.background"`, `"TabbedPane.background"` |
-| **Background Panel / Kartu** | `#c0e6fd` | `"Panel.background"`, `"TabbedPane.selectedBackground"` (Biru Terang) |
-| **Border / Garis Pemisah** | `#80aad3` | `"Component.borderColor"`, `"Table.gridColor"`, `"Button.borderColor"` |
-| **Elemen Sekunder** | `#5b86b6` | `"Component.focusColor"`, `"Separator.foreground"` |
-| **Tombol Utama (Primary)** | `#3f6593` / `#1b3554` | `"Button.background"` & `"Button.hoverBackground"` (Teks: `#FFFFFF`) |
-| **Teks Utama (Foreground)** | `#000f22` | `"Label.foreground"`, `"Table.foreground"`, `"TabbedPane.foreground"` |
+> **Solusi Kasir & Manajemen Terpadu Klinik Hewan Peliharaan yang Modern**
+> *Dibangun dengan Java Swing + FlatLaf — Ringan, Cepat, dan Siap Pakai*
 
 ---
 
-## 📑 Struktur Layout Multi-Tab (`JTabbedPane`)
+## Deskripsi Aplikasi
 
-Aplikasi menggunakan antarmuka tab ganda untuk memisahkan alur transaksi aktif dengan arsip transaksi:
+**BluePaw Vet & Grooming** adalah aplikasi desktop berbasis Java Swing yang dirancang khusus untuk memenuhi kebutuhan administrasi dan kasir pada klinik dokter hewan serta pusat perawatan hewan peliharaan (*pet grooming*).
 
-### Tab 1: "🐾 Registrasi Layanan"
-- **Formulir Pasien & Tindakan**: Input nama pemilik, nama hewan, jenis hewan, bobot tubuh (kg), dokter jaga, paket grooming, dan checkbox layanan tambahan.
-- **Sistem Pembayaran Dinamis**:
-  - **Cash**: Menampilkan input "Uang Diterima" dan kalkulasi "Kembalian" secara real-time. Jika uang kurang, label berwarna merah dan tombol Cetak dinonaktifkan.
-  - **QRIS**: Menampilkan kartu barcode QRIS (200x200 px proporsional) dan menyembunyikan input uang tunai.
-- **Cetak Nota & Auto-Save**: Saat tombol "Cetak Nota" diklik, nota resmi ditampilkan, pemesanan otomatis dicatat ke Tab 2 (Riwayat Pemesanan), dan form di-reset bersih untuk pasien berikutnya.
-
-### Tab 2: "📋 Riwayat Pemesanan" (Fitur Baru)
-- **Komponen**: `JTable` di dalam `JScrollPane` menggunakan `DefaultTableModel`.
-- **Kolom Tabel**:
-  1. `ID/No` (Auto-generated: `ORD-001`, `ORD-002`, dst.)
-  2. `Nama Pemilik`
-  3. `Nama Hewan`
-  4. `Layanan` (Rincian seluruh tindakan yang dipilih)
-  5. `Total Biaya` (Format mata uang Rupiah)
-  6. `Status Pembayaran` (Status: `Lunas (Cash)`, `Lunas (QRIS)`, atau `Selesai`)
-- **Aksi Interaktif (Tombol di Bawah Tabel)**:
-  - **✏️ Edit Pemesanan**: Mengambil data baris yang dipilih, mengembalikan seluruh input ke form Tab 1 agar dapat disesuaikan ulang, menghapus baris sementara dari tabel, dan memindahkan fokus user ke Tab 1.
-  - **❌ Batal / Hapus**: Menghapus pemesanan yang dipilih dari tabel setelah konfirmasi dialog.
-  - **✅ Selesai**: Mengubah nilai kolom status pemesanan menjadi `"Selesai"`.
+Aplikasi ini menghadirkan antarmuka modern dengan **Custom Blue Palette** menggunakan framework **FlatLaf (Mac Light theme)**, ikon vektor **SVG** beresolusi tinggi, navigasi multi-tab yang intuitif, serta kalkulasi biaya layanan secara **real-time** yang adaptif terhadap bobot hewan.
 
 ---
 
-## 🖼️ Panduan Pengelolaan Aset Gambar QRIS (`qris_dummy.png`)
+## Fitur Utama
 
-### 1. Lokasi File Gambar
-Secara default, file gambar barcode bernama **`qris_dummy.png`** diletakkan di root direktori proyek:
-```
-d:\StudyCase\Petcare\
-├── qris_dummy.png        <-- [FILE ASET GAMBAR QRIS]
-├── PetCareGUI.java
-├── UIHelper.java
-├── OrderRecord.java
-├── PasienHewan.java
-├── LayananGrooming.java
-└── run.bat
-```
+### 1. Registrasi Layanan & Pasien
+- Input nama pemilik dan nama hewan peliharaan
+- Pilihan jenis hewan: Kucing, Anjing, Kelinci, Burung, Lainnya
+- Input bobot tubuh hewan (kg) dengan validasi angka real-time dan visual error border
+- Pemilihan dokter hewan bertugas (Drh. Budi, Drh. Sarah, Drh. Andi)
+- Paket Grooming: Mandi Kutu, Potong Bulu, Potong Kuku, Full Grooming
+- Layanan tambahan via checkbox: Vaksinasi, Pakan Khusus, Checkup Umum, Rawat Inap, Bedah Minor
 
-### 2. Kustomisasi Path di Kode Sumber
-Buka [PetCareGUI.java](file:///d:/StudyCase/Petcare/PetCareGUI.java) dan ubah konstanta berikut jika gambar dipindahkan:
-```java
-private static final String QRIS_IMAGE_PATH = "qris_dummy.png";
-private static final int QRIS_BARCODE_WIDTH = 200;
-private static final int QRIS_BARCODE_HEIGHT = 200;
-```
+### 2. Kalkulasi Harga Dinamis (Real-time)
+- Total tagihan dihitung otomatis setiap kali form diubah (DocumentListener & ActionListener)
+- **Surcharge bobot >= 5 kg**: hewan berbobot 5 kg ke atas dikenakan biaya tambahan Rp 20.000 per layanan medis
+
+### 3. Sistem Pembayaran Cash & QRIS
+- **Mode Cash**: Tampilkan field "Uang Diterima", hitung kembalian secara real-time, tombol Cetak Nota dinonaktifkan jika uang kurang
+- **Mode QRIS**: Sembunyikan field cash, tampilkan barcode QRIS (gambar qris_dummy.png)
+- Toggle antara Cash dan QRIS bersifat instan tanpa reload
+
+### 4. Nota Tagihan Digital
+- Cetak nota dengan format teks terstruktur
+- Menampilkan: data pasien, rincian layanan + biaya, metode pembayaran, dan kembalian
+- Setelah dicetak, data otomatis tersimpan ke Tab Riwayat
+
+### 5. Manajemen Riwayat Pemesanan (CRUD)
+- Tabel riwayat transaksi dengan kolom: ID, Nama Pemilik, Nama Hewan, Layanan, Total, Status
+- **Edit**: Kembalikan data ke form Tab 1 untuk direvisi
+- **Hapus/Batal**: Hapus transaksi setelah konfirmasi dialog
+- **Selesai**: Tandai transaksi sebagai "Selesai"
+
+### 6. UI/UX Modern dengan Custom Blue Palette
+| Elemen              | Warna            | Kode Hex  |
+|---------------------|------------------|-----------|
+| Background Utama    | Putih Bersih     | #FFFFFF |
+| Background Kartu    | Biru Terang      | #c0e6fd |
+| Border / Pemisah    | Biru Medium      | #80aad3 |
+| Tombol Primary      | Biru Solid       | #3f6593 |
+| Teks Utama          | Biru Sangat Gelap| #000f22 |
+
+- Rounded corners pada semua input field, tombol, dan panel (via FlatLaf arc)
+- Logo SVG luepaw-logo.svg tampil di header dan ikon jendela (taskbar)
+- Font: **Segoe UI** (modern system font)
 
 ---
 
-## 📂 Struktur Proyek
-```
-d:\StudyCase\Petcare\
-├── PetCareGUI.java        # Main JFrame: JTabbedPane, Form Registrasi, dan Riwayat JTable
-├── UIHelper.java          # Utility FlatLaf, UIManager Color Overrides, & Image Scaling
-├── OrderRecord.java       # Model Data Pemesanan untuk integrasi JTable & fungsi Edit
-├── PasienHewan.java       # Model Data Pasien
-├── LayananGrooming.java   # Model Data Layanan Grooming
-├── qris_dummy.png         # Aset dummy QRIS Barcode (200x200 px)
-├── README.md              # Dokumentasi lengkap
-├── run.bat                # Batch launcher otomatis
-└── lib/
-    ├── flatlaf-3.2.5.jar
-    └── flatlaf-intellij-themes-3.2.5.jar
-```
+## Teknologi
+
+| Komponen          | Detail                                  |
+|-------------------|-----------------------------------------|
+| **Bahasa**        | Java 11+                                |
+| **UI Framework**  | Java Swing                              |
+| **Look & Feel**   | FlatLaf 3.2.5 (FlatMacLightLaf)        |
+| **SVG Support**   | flatlaf-extras 3.2.5 + JSVG 1.3.0      |
+| **Build**         | Standalone (javac + run.bat)            |
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
+## Struktur Proyek
 
-Jalankan via launcher batch:
-```cmd
-run.bat
-```
-Atau manual melalui command prompt:
-```cmd
+`
+Petcare/
+|-- PetCareGUI.java        # Kelas utama GUI (JFrame + JTabbedPane)
+|-- UIHelper.java          # Utilitas warna, factory komponen, SVG loader
+|-- OrderRecord.java       # Model data transaksi (Serializable)
+|-- PasienHewan.java       # Model data pasien hewan
+|-- LayananGrooming.java   # Model data layanan grooming
+|-- bluepaw-logo.svg       # Logo vektor aplikasi
+|-- qris_dummy.png         # Gambar barcode QRIS placeholder
+|-- run.bat                # Script kompilasi & jalankan (Windows)
+|-- README.md              # Dokumentasi proyek ini
+|-- lib/
+|   |-- flatlaf-3.2.5.jar
+|   |-- flatlaf-extras-3.2.5.jar
+|   |-- flatlaf-intellij-themes-3.2.5.jar
+|   -- jsvg-1.3.0.jar
+`
+
+---
+
+## Cara Menjalankan
+
+### Prasyarat
+- **Java JDK 11 atau lebih baru** terinstal dan ada di PATH
+- Sistem operasi: **Windows** (run.bat tersedia)
+- Folder lib/ berisi semua file .jar yang diperlukan
+
+### Langkah 1 — Clone / Unduh Proyek
+`ash
+git clone <url-repositori>
+cd Petcare
+`
+
+### Langkah 2 — Jalankan via run.bat (Windows)
+Klik dua kali file un.bat, atau jalankan dari terminal:
+`at
+.\run.bat
+`
+Script ini akan otomatis mengkompilasi semua file .java dan menjalankan aplikasi.
+
+### Langkah 3 — Kompilasi & Jalankan Manual (Opsional)
+`ash
+# Kompilasi
 javac -cp ".;lib/*" *.java
+
+# Jalankan
 java -cp ".;lib/*" PetCareGUI
-```
+`
+
+> **Catatan:** Pastikan file luepaw-logo.svg dan qris_dummy.png berada di direktori yang sama dengan file .class saat menjalankan.
+
+---
+
+## Harga Layanan
+
+| Layanan              | Harga Dasar    | Surcharge (>= 5 kg) |
+|----------------------|----------------|----------------------|
+| Grooming Mandi Kutu  | Rp 50.000      | + Rp 20.000          |
+| Grooming Potong Bulu | Rp 40.000      | + Rp 20.000          |
+| Grooming Potong Kuku | Rp 25.000      | -                    |
+| Grooming Full        | Rp 100.000     | + Rp 20.000          |
+| Vaksinasi            | Rp 100.000     | + Rp 20.000          |
+| Pakan Khusus         | Rp 50.000      | -                    |
+| Checkup Umum         | Rp 75.000      | + Rp 20.000          |
+| Rawat Inap           | Rp 150.000     | -                    |
+| Bedah Minor          | Rp 250.000     | + Rp 20.000          |
+
+---
+
+## Lisensi
+
+Proyek ini dibuat untuk keperluan studi kasus pengembangan aplikasi desktop Java Swing.
+Bebas digunakan dan dimodifikasi untuk tujuan pembelajaran.
+
+---
+
+*BluePaw Vet & Grooming — Karena hewan peliharaan Anda layak mendapat perawatan terbaik.*

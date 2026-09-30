@@ -1,123 +1,149 @@
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.extras.FlatSVGUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.io.File;
+import java.net.URL;
+import java.util.List;
 
 /**
- * UIHelper - Kelas utilitas untuk styling FlatLaf dan Custom Blue Palette
- * sesuai tema klinik hewan profesional "PetCare Vet Clinic & Grooming".
+ * UIHelper - Kelas utilitas statis untuk styling FlatLaf, Custom Blue Palette,
+ * dan pembuatan komponen UI standar pada aplikasi "BluePaw Vet & Grooming".
+ *
+ * <p>Semua konstanta warna, font, dan metode factory komponen GUI dipusatkan
+ * di kelas ini agar mudah dikelola dan diubah secara konsisten.</p>
  */
 public final class UIHelper {
 
-    // Private constructor untuk utility class
-    private UIHelper() {
-    }
+    /** Mencegah instansiasi kelas utilitas. */
+    private UIHelper() { }
 
     // =========================================================================
-    // 1. PALET WARNA RESMI (HEX COLOR CODES)
+    // SECTION 1 - PALET WARNA RESMI (CUSTOM BLUE PALETTE)
     // =========================================================================
-    public static final Color COLOR_BG_MAIN        = Color.decode("#FFFFFF"); // Background Utama
-    public static final Color COLOR_CARD_ACCENT    = Color.decode("#c0e6fd"); // Background Panel/Kartu (Biru Terang)
-    public static final Color COLOR_BORDER         = Color.decode("#80aad3"); // Border / Garis Pemisah
-    public static final Color COLOR_BORDER_DARK    = Color.decode("#5b86b6"); // Elemen Sekunder
-    public static final Color COLOR_PRIMARY        = Color.decode("#3f6593"); // Background Tombol Utama (Primary)
-    public static final Color COLOR_PRIMARY_DARK   = Color.decode("#1b3554"); // Biru Tua (Hover / Secondary Accent)
-    public static final Color COLOR_TEXT_MAIN      = Color.decode("#000f22"); // Teks Utama (Biru Sangat Gelap)
-    public static final Color COLOR_TEXT_WHITE     = Color.decode("#FFFFFF"); // Teks Putih
 
-    public static final String FONT_FAMILY         = "Segoe UI";
+    /** Background utama aplikasi (putih bersih). */
+    public static final Color COLOR_BG_MAIN      = Color.decode("#FFFFFF");
+
+    /** Background panel kartu / form (biru terang). */
+    public static final Color COLOR_CARD_ACCENT  = Color.decode("#c0e6fd");
+
+    /** Warna border / garis pemisah elemen. */
+    public static final Color COLOR_BORDER       = Color.decode("#80aad3");
+
+    /** Elemen sekunder dan aksen agak gelap. */
+    public static final Color COLOR_BORDER_DARK  = Color.decode("#5b86b6");
+
+    /** Warna tombol aksi utama (Primary Button). */
+    public static final Color COLOR_PRIMARY      = Color.decode("#3f6593");
+
+    /** Biru tua untuk hover, judul, dan teks heading. */
+    public static final Color COLOR_PRIMARY_DARK = Color.decode("#1b3554");
+
+    /** Teks utama (biru sangat gelap, hampir hitam). */
+    public static final Color COLOR_TEXT_MAIN    = Color.decode("#000f22");
+
+    /** Teks di atas tombol / latar gelap. */
+    public static final Color COLOR_TEXT_WHITE   = Color.decode("#FFFFFF");
+
+    /** Nama font utama aplikasi. */
+    public static final String FONT_FAMILY       = "Segoe UI";
 
     // =========================================================================
-    // 2. INISIALISASI UIMANAGER SEBELUM FLATLAF.SETUP()
+    // SECTION 2 - INISIALISASI LOOK & FEEL (dipanggil SEBELUM komponen dibuat)
     // =========================================================================
+
+    /**
+     * Mengkonfigurasi UIManager dengan palet warna kustom dan menginisialisasi
+     * FlatMacLightLaf sebagai Look and Feel aktif.
+     * WAJIB dipanggil sebelum membuat instance komponen Swing apapun.
+     */
     public static void setupFlatLaf() {
         try {
-            // A. Terapkan konfigurasi UIManager.put SEBELUM Look-and-Feel dimuat
-            // Background Utama & Panel / Kartu
-            UIManager.put("Panel.background", COLOR_CARD_ACCENT);
-            UIManager.put("RootPane.background", COLOR_BG_MAIN);
-            UIManager.put("ScrollPane.background", COLOR_BG_MAIN);
-            UIManager.put("Viewport.background", COLOR_BG_MAIN);
-
-            // TabbedPane Styling
-            UIManager.put("TabbedPane.background", COLOR_BG_MAIN);
-            UIManager.put("TabbedPane.selectedBackground", COLOR_CARD_ACCENT);
-            UIManager.put("TabbedPane.selectedForeground", COLOR_TEXT_MAIN);
-            UIManager.put("TabbedPane.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("TabbedPane.hoverColor", COLOR_CARD_ACCENT);
-            UIManager.put("TabbedPane.underlineColor", COLOR_PRIMARY);
-            UIManager.put("TabbedPane.focusColor", COLOR_BORDER);
-            UIManager.put("TabbedPane.tabArc", 12);
-            UIManager.put("TabbedPane.tabInsets", new Insets(10, 24, 10, 24));
-            UIManager.put("TabbedPane.font", new Font(FONT_FAMILY, Font.BOLD, 14));
-
-            // Tombol Utama (Primary Button)
-            UIManager.put("Button.background", COLOR_PRIMARY);
-            UIManager.put("Button.foreground", COLOR_TEXT_WHITE);
-            UIManager.put("Button.hoverBackground", COLOR_PRIMARY_DARK);
-            UIManager.put("Button.focusedBackground", COLOR_PRIMARY_DARK);
-            UIManager.put("Button.borderColor", COLOR_BORDER);
-            UIManager.put("Button.arc", 16);
-
-            // Teks Utama (Foreground)
-            UIManager.put("Label.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("CheckBox.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("RadioButton.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("Table.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("TableHeader.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("TitledBorder.titleColor", COLOR_TEXT_MAIN);
-
-            // Border & Elemen Sekunder
-            UIManager.put("Component.borderColor", COLOR_BORDER);
-            UIManager.put("Component.focusColor", COLOR_BORDER_DARK);
-            UIManager.put("Component.accentColor", COLOR_PRIMARY);
-            UIManager.put("Table.gridColor", COLOR_BORDER);
-            UIManager.put("TableHeader.separatorColor", COLOR_BORDER);
-            UIManager.put("Separator.background", COLOR_BORDER);
-            UIManager.put("Separator.foreground", COLOR_BORDER_DARK);
-
-            // Input Fields & Arcs
-            UIManager.put("TextField.background", COLOR_BG_MAIN);
-            UIManager.put("TextField.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("ComboBox.background", COLOR_BG_MAIN);
-            UIManager.put("ComboBox.foreground", COLOR_TEXT_MAIN);
-            UIManager.put("Component.arc", 14);
-            UIManager.put("TextComponent.arc", 14);
-            UIManager.put("ComboBox.arc", 14);
-            UIManager.put("CheckBox.arc", 8);
-
-            // Insets & Font Default
-            UIManager.put("TextComponent.margin", new Insets(8, 14, 8, 14));
-            UIManager.put("ComboBox.padding", new Insets(6, 12, 6, 12));
-            UIManager.put("defaultFont", new Font(FONT_FAMILY, Font.PLAIN, 14));
-
-            // B. Inisialisasi tema FlatMacLightLaf setelah semua UIManager.put selesai
+            applyColorPalette();
+            applyComponentStyling();
             FlatMacLightLaf.setup();
-
         } catch (Exception ex) {
-            System.err.println("Gagal menginisialisasi FlatLaf: " + ex.getMessage());
+            System.err.println("[UIHelper] Gagal menginisialisasi FlatLaf: " + ex.getMessage());
         }
     }
 
+    /** Menerapkan palet warna ke komponen-komponen Swing global. */
+    private static void applyColorPalette() {
+        UIManager.put("Panel.background",              COLOR_CARD_ACCENT);
+        UIManager.put("RootPane.background",           COLOR_BG_MAIN);
+        UIManager.put("ScrollPane.background",         COLOR_BG_MAIN);
+        UIManager.put("Viewport.background",           COLOR_BG_MAIN);
+        UIManager.put("TabbedPane.background",         COLOR_BG_MAIN);
+        UIManager.put("TabbedPane.selectedBackground", COLOR_CARD_ACCENT);
+        UIManager.put("TabbedPane.selectedForeground", COLOR_TEXT_MAIN);
+        UIManager.put("TabbedPane.foreground",         COLOR_TEXT_MAIN);
+        UIManager.put("TabbedPane.hoverColor",         COLOR_CARD_ACCENT);
+        UIManager.put("TabbedPane.underlineColor",     COLOR_PRIMARY);
+        UIManager.put("TabbedPane.focusColor",         COLOR_BORDER);
+        UIManager.put("Button.background",             COLOR_PRIMARY);
+        UIManager.put("Button.foreground",             COLOR_TEXT_WHITE);
+        UIManager.put("Button.hoverBackground",        COLOR_PRIMARY_DARK);
+        UIManager.put("Button.focusedBackground",      COLOR_PRIMARY_DARK);
+        UIManager.put("Button.borderColor",            COLOR_BORDER);
+        UIManager.put("Label.foreground",              COLOR_TEXT_MAIN);
+        UIManager.put("CheckBox.foreground",           COLOR_TEXT_MAIN);
+        UIManager.put("RadioButton.foreground",        COLOR_TEXT_MAIN);
+        UIManager.put("Table.foreground",              COLOR_TEXT_MAIN);
+        UIManager.put("TableHeader.foreground",        COLOR_TEXT_MAIN);
+        UIManager.put("TitledBorder.titleColor",       COLOR_TEXT_MAIN);
+        UIManager.put("Component.borderColor",         COLOR_BORDER);
+        UIManager.put("Component.focusColor",          COLOR_BORDER_DARK);
+        UIManager.put("Component.accentColor",         COLOR_PRIMARY);
+        UIManager.put("Table.gridColor",               COLOR_BORDER);
+        UIManager.put("TableHeader.separatorColor",    COLOR_BORDER);
+        UIManager.put("Separator.background",          COLOR_BORDER);
+        UIManager.put("Separator.foreground",          COLOR_BORDER_DARK);
+        UIManager.put("TextField.background",          COLOR_BG_MAIN);
+        UIManager.put("TextField.foreground",          COLOR_TEXT_MAIN);
+        UIManager.put("ComboBox.background",           COLOR_BG_MAIN);
+        UIManager.put("ComboBox.foreground",           COLOR_TEXT_MAIN);
+    }
+
+    /** Menerapkan properti gaya (arc, insets, font) ke komponen. */
+    private static void applyComponentStyling() {
+        UIManager.put("TabbedPane.tabArc",    12);
+        UIManager.put("TabbedPane.tabInsets", new Insets(10, 24, 10, 24));
+        UIManager.put("TabbedPane.font",      new Font(FONT_FAMILY, Font.BOLD, 14));
+        UIManager.put("Button.arc",           16);
+        UIManager.put("Component.arc",        14);
+        UIManager.put("TextComponent.arc",    14);
+        UIManager.put("ComboBox.arc",         14);
+        UIManager.put("CheckBox.arc",          8);
+        UIManager.put("TextComponent.margin", new Insets(8, 14, 8, 14));
+        UIManager.put("ComboBox.padding",     new Insets(6, 12, 6, 12));
+        UIManager.put("defaultFont",          new Font(FONT_FAMILY, Font.PLAIN, 14));
+    }
+
     // =========================================================================
-    // 3. FACTORY & STYLING KOMPONEN
+    // SECTION 3 - FACTORY KOMPONEN GUI
     // =========================================================================
+
+    /** Membuat JLabel judul/header besar dengan font Bold. */
     public static JLabel createHeaderLabel(String text) {
-        JLabel label = new JLabel(text);
+        final JLabel label = new JLabel(text);
         label.setFont(new Font(FONT_FAMILY, Font.BOLD, 22));
         label.setForeground(COLOR_TEXT_MAIN);
         return label;
     }
 
+    /** Menerapkan gaya label formulir (Bold, warna teks utama) ke JLabel. */
     public static void styleFormLabel(JLabel label) {
         label.setFont(new Font(FONT_FAMILY, Font.BOLD, 13));
         label.setForeground(COLOR_TEXT_MAIN);
     }
 
+    /** Membuat tombol utama (Primary Button) bergaya rounded rectangle. */
     public static JButton createPrimaryButton(String text) {
-        JButton button = new JButton(text);
+        final JButton button = new JButton(text);
         button.setFont(new Font(FONT_FAMILY, Font.BOLD, 14));
         button.setForeground(COLOR_TEXT_WHITE);
         button.setBackground(COLOR_PRIMARY);
@@ -128,8 +154,9 @@ public final class UIHelper {
         return button;
     }
 
+    /** Membuat tombol sekunder (Secondary Button) dengan warna latar kustom. */
     public static JButton createSecondaryButton(String text, Color bg) {
-        JButton button = new JButton(text);
+        final JButton button = new JButton(text);
         button.setFont(new Font(FONT_FAMILY, Font.BOLD, 13));
         button.setForeground(COLOR_TEXT_WHITE);
         button.setBackground(bg);
@@ -140,16 +167,18 @@ public final class UIHelper {
         return button;
     }
 
+    /** Membuat JLabel total tagihan berukuran besar. */
     public static JLabel createTotalLabel() {
-        JLabel label = new JLabel("Rp 0");
+        final JLabel label = new JLabel("Rp 0");
         label.setFont(new Font(FONT_FAMILY, Font.BOLD, 32));
         label.setForeground(COLOR_PRIMARY_DARK);
         label.setHorizontalAlignment(SwingConstants.RIGHT);
         return label;
     }
 
+    /** Membuat panel kartu (card) dengan background dan border rounded. */
     public static JPanel createCardPanel(Color bgColor) {
-        JPanel panel = new JPanel();
+        final JPanel panel = new JPanel();
         panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
@@ -160,42 +189,100 @@ public final class UIHelper {
     }
 
     // =========================================================================
-    // 4. IMAGE UTILITIES (IMAGE SCALING PROPORSIONAL)
+    // SECTION 4 - VALIDASI KOMPONEN (OUTLINE ERROR)
     // =========================================================================
-    public static ImageIcon scaleImage(ImageIcon srcIcon, int targetWidth, int targetHeight) {
-        if (srcIcon == null || srcIcon.getImage() == null) return null;
-        Image rawImage = srcIcon.getImage();
-        Image scaledImage = rawImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
-        return new ImageIcon(scaledImage);
+
+    /** Menampilkan atau menghapus border merah "error" pada komponen input. */
+    public static void setInvalidBorder(JComponent comp, boolean isInvalid) {
+        comp.putClientProperty("JComponent.outline", isInvalid ? "error" : null);
+        comp.repaint();
     }
 
+    // =========================================================================
+    // SECTION 5 - IMAGE UTILITIES
+    // =========================================================================
+
+    /** Menskala ImageIcon ke dimensi target secara proporsional. */
+    public static ImageIcon scaleImage(ImageIcon srcIcon, int targetWidth, int targetHeight) {
+        if (srcIcon == null || srcIcon.getImage() == null) return null;
+        final Image scaled = srcIcon.getImage()
+                .getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaled);
+    }
+
+    /** Memuat gambar dari classpath atau file sistem lalu menskalakannya. */
     public static ImageIcon loadAndScaleImage(String path, int targetWidth, int targetHeight) {
         try {
-            java.net.URL resourceUrl = UIHelper.class.getResource("/" + path);
-            ImageIcon rawIcon = null;
+            final URL resourceUrl = UIHelper.class.getResource("/" + path);
             if (resourceUrl != null) {
-                rawIcon = new ImageIcon(resourceUrl);
-            } else {
-                File file = new File(path);
-                if (file.exists()) {
-                    rawIcon = new ImageIcon(file.getAbsolutePath());
-                }
+                return scaleImage(new ImageIcon(resourceUrl), targetWidth, targetHeight);
             }
-            if (rawIcon != null && rawIcon.getImage() != null) {
-                return scaleImage(rawIcon, targetWidth, targetHeight);
+            final File file = new File(path);
+            if (file.exists()) {
+                return scaleImage(new ImageIcon(file.getAbsolutePath()), targetWidth, targetHeight);
             }
         } catch (Exception ex) {
-            System.err.println("Gagal memuat gambar: " + ex.getMessage());
+            System.err.println("[UIHelper] Gagal memuat gambar '" + path + "': " + ex.getMessage());
         }
         return null;
     }
 
-    public static void setInvalidBorder(JComponent comp, boolean isInvalid) {
-        if (isInvalid) {
-            comp.putClientProperty("JComponent.outline", "error");
-        } else {
-            comp.putClientProperty("JComponent.outline", null);
+    // =========================================================================
+    // SECTION 6 - SVG VECTOR UTILITIES (FLATLAF EXTRAS)
+    // =========================================================================
+
+    /**
+     * Memuat file SVG sebagai FlatSVGIcon dengan ukuran tertentu.
+     * Urutan pencarian: classpath, src/main/resources/, direktori kerja root.
+     */
+    public static FlatSVGIcon loadSVGIcon(String resourceName, int width, int height) {
+        try {
+            URL res = UIHelper.class.getResource("/" + resourceName);
+            if (res == null) {
+                res = UIHelper.class.getResource(resourceName);
+            }
+            if (res != null) {
+                return new FlatSVGIcon(res).derive(width, height);
+            }
+            final File srcFile = new File("src/main/resources/" + resourceName);
+            if (srcFile.exists()) {
+                return new FlatSVGIcon(srcFile).derive(width, height);
+            }
+            final File rootFile = new File(resourceName);
+            if (rootFile.exists()) {
+                return new FlatSVGIcon(rootFile).derive(width, height);
+            }
+            System.err.println("[UIHelper] File SVG '" + resourceName + "' tidak ditemukan.");
+        } catch (Exception ex) {
+            System.err.println("[UIHelper] Gagal memuat FlatSVGIcon '" + resourceName + "': " + ex.getMessage());
         }
-        comp.repaint();
+        return null;
+    }
+
+    /**
+     * Menghasilkan multi-resolution icon Image dari SVG untuk JFrame/Taskbar.
+     */
+    public static List<Image> loadWindowIcons(String resourceName) {
+        try {
+            URL res = UIHelper.class.getResource("/" + resourceName);
+            if (res == null) {
+                res = UIHelper.class.getResource(resourceName);
+            }
+            if (res != null) {
+                return FlatSVGUtils.createWindowIconImages(res);
+            }
+            final File srcFile = new File("src/main/resources/" + resourceName);
+            if (srcFile.exists()) {
+                return FlatSVGUtils.createWindowIconImages(srcFile.toURI().toURL());
+            }
+            final File rootFile = new File(resourceName);
+            if (rootFile.exists()) {
+                return FlatSVGUtils.createWindowIconImages(rootFile.toURI().toURL());
+            }
+            System.err.println("[UIHelper] File SVG '" + resourceName + "' untuk window icon tidak ditemukan.");
+        } catch (Exception ex) {
+            System.err.println("[UIHelper] Gagal memuat window icons dari '" + resourceName + "': " + ex.getMessage());
+        }
+        return null;
     }
 }
