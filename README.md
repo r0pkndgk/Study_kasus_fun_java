@@ -1,177 +1,166 @@
 # PetCare Vet Clinic & Grooming
 
 ## Overview
-A Java Swing desktop application for managing pet clinic & grooming services. Features real-time invoice calculation, veterinarian selection, expanded service options, and a Cash/QRIS payment system. The UI uses **FlatLaf** for a modern, clean look with `GridBagLayout` for precise component placement.
+Aplikasi desktop Java Swing untuk manajemen klinik dokter hewan & layanan grooming hewan peliharaan (**PetCare Vet Clinic & Grooming**). Menggunakan framework Look-and-Feel modern **FlatLaf** dengan perombakan antarmuka pengguna berbasis **Custom Blue Palette** bergaya website klinik hewan profesional, kalkulasi tagihan invoice real-time, serta sistem pembayaran interaktif dinamis (**Cash** dan **QRIS Digital**).
 
 ---
 
-## 📂 Project Structure
-```
-PetCareGUI.java        # Main Swing UI with all 3 new features
-UIHelper.java          # Helper utilities for FlatLaf styling
-PasienHewan.java       # Model: pet owner & pet data
-LayananGrooming.java   # Model: grooming package & cost
-README.md              # This documentation
-run.bat                # Simple script to compile & launch
-lib/
-  flatlaf-3.2.5.jar    # FlatLaf Look-and-Feel library
-  flatlaf-intellij-themes-3.2.5.jar
-```
+## 🎨 Pembaruan Desain UI (Custom Blue Palette)
+
+Aplikasi telah direfaktor dengan palet warna khusus bertema estetika klinik medis modern yang bersih, lega (*spacious card-style*), dan elegan.
+
+### 1. Spesifikasi Palet Warna (Hex Code)
+| Elemen UI | Hex Code | Peran & Deskripsi |
+|-----------|----------|-------------------|
+| **Background Panel Utama** | `#FFFFFF` | Latar belakang kartu (*Card*) form input & ringkasan tagihan. |
+| **Aksen Kartu & Header** | `#c0e6fd` | Biru paling terang untuk aksen header kartu dan kontainer kartu QRIS. |
+| **Background Dashboard** | `#F0F6FA` | Latar belakang dasar jendela aplikasi agar kartu terlihat kontras. |
+| **Border & Pemisah** | `#80aad3` | Garis tepi (*border*) panel kartu, separator tagihan, dan input focus. |
+| **Elemen Sekunder** | `#5b86b6` | Garis penegas dan label kategori sekunder. |
+| **Tombol Utama (Primary)** | `#3f6593` / `#1b3554` | Biru dominan tombol "Cetak Nota" dengan teks putih murni (`#FFFFFF`). |
+| **Teks Utama (Headings)** | `#000f22` | Biru paling gelap untuk judul, label penting, dan rincian biaya (bukan hitam murni). |
+
+### 2. Hirarki Tipografi & Styling FlatLaf
+- **Font Family**: Menggunakan font modern Sans-Serif (`Segoe UI` / `Inter`) yang tajam dan nyaman dibaca.
+- **Heading & Label**: Judul bagian ("🐾 Registrasi Layanan", "🧾 Ringkasan Tagihan") berukuran 22pt Bold dengan warna `#000f22`. Label form berukuran 13pt Bold.
+- **Rounded Corners**: Memanfaatkan properti FlatLaf (`Button.arc: 16`, `Component.arc: 14`, `FlatLaf.style: "arc: 20"`, serta `JButton.buttonType: "roundRect"`).
+- **Spacious Spacing**: Menggunakan kombinasi `EmptyBorder` dan padding luas pada setiap kartu agar antarmuka tidak terasa padat atau sesak.
 
 ---
 
-## ✨ Fitur Baru (v2.0)
+## 💳 Fitur Pembayaran Dinamis (Cash vs QRIS)
 
-### 1. Pemilihan Dokter Hewan
-- **Komponen**: `JComboBox` berlabel "Dokter Pemeriksa"
-- **Pilihan**: Drh. Budi, Drh. Sarah, Drh. Andi
-- **Integrasi**: Nama dokter yang dipilih ditampilkan di Ringkasan Tagihan dan ikut tercetak di Nota
+Sistem pembayaran mendukung dua mode transaksi dengan perubahan visibilitas komponen secara instan (*real-time reactive UI*):
 
-### 2. Variasi Layanan Tambahan
-Selain Grooming, Vaksinasi, dan Pakan yang sudah ada, kini tersedia 3 layanan baru:
-
-| Layanan | Biaya Dasar | Surcharge >5kg |
-|---------|------------|----------------|
-| Grooming (Mandi Kutu) | Rp 50.000 | +Rp 20.000 |
-| Grooming (Potong Bulu) | Rp 40.000 | +Rp 20.000 |
-| Grooming (Potong Kuku) | Rp 25.000 | +Rp 20.000 |
-| Grooming (Full Grooming) | Rp 100.000 | +Rp 20.000 |
-| Vaksinasi | Rp 100.000 | +Rp 20.000 |
-| Pakan | Rp 50.000 | — |
-| **Checkup Umum** _(baru)_ | Rp 75.000 | +Rp 20.000 |
-| **Rawat Inap** _(baru)_ | Rp 150.000 | — |
-| **Bedah Minor** _(baru)_ | Rp 250.000 | +Rp 20.000 |
-
-- Semua checkbox layanan tersusun dalam grid 2×3 yang rapi
-- Surcharge bobot >5kg berlaku otomatis pada layanan medis/grooming (Vaksinasi, Checkup, Bedah Minor, dan semua paket Grooming)
-- Rawat Inap dan Pakan **tidak** terkena surcharge bobot
-
-### 3. Sistem Pembayaran (Cash / QRIS)
-**Komponen**: `JComboBox` "Metode Pembayaran" dengan pilihan Cash dan QRIS
-
-#### Logika Interaktif:
+### 1. Logika Interaktif Visibilitas
 ```
-┌─────────────────────────────────────────────────┐
-│  Metode Pembayaran: [  Cash  ▼]                 │
-│  Uang Diterima:     [  150000  ]    ← aktif     │
-│                                                 │
-│  KEMBALIAN:  Rp 25.000  (hijau)                 │
-│  [Cetak Nota]  ← aktif                          │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Metode Pembayaran: [  Cash  ▼]                             │
+│                                                             │
+│  [✓] Input Uang Diterima (Rp) : DITAMPILKAN                 │
+│  [✓] Label & Nilai Kembalian  : DITAMPILKAN                 │
+│  [✗] Kartu Barcode QRIS       : DISEMBUNYIKAN               │
+└─────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────┐
-│  Metode Pembayaran: [  QRIS  ▼]                 │
-│  Uang Diterima:     [         ]    ← disabled   │
-│                                                 │
-│  KEMBALIAN:  Rp 0                               │
-│  [Cetak Nota]  ← aktif                          │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Metode Pembayaran: [  QRIS  ▼]                             │
+│                                                             │
+│  [✗] Input Uang Diterima (Rp) : DISEMBUNYIKAN               │
+│  [✗] Label & Nilai Kembalian  : DISEMBUNYIKAN               │
+│  [✓] Kartu Barcode QRIS       : DITAMPILKAN                 │
+│      - Pesan: "Silakan scan QRIS berikut"                   │
+│      - Gambar Barcode QRIS (200x200 px proporsional)        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-- **QRIS dipilih**: Field "Uang Diterima" di-disable dan dikosongkan. Kembalian otomatis Rp 0. Tombol "Cetak Nota" aktif selama form valid.
-- **Cash dipilih**: Field "Uang Diterima" aktif. Kembalian dihitung real-time via `DocumentListener`:
-  - `Kembalian = Uang Diterima - Total Tagihan`
-  - Jika uang kurang → teks **"Uang Tidak Cukup!"** berwarna **merah**, tombol "Cetak Nota" **disabled**
-  - Jika uang cukup → kembalian ditampilkan normal berwarna hijau teal
+- **Jika memilih "QRIS"**:
+  - Kartu Barcode QRIS (`pnlQrisCard`) muncul di bawah total tagihan dengan latar belakang `#c0e6fd` dan border `#80aad3`.
+  - Teks instruksi *"Silakan scan QRIS berikut"* dan sub-teks e-Wallet / Mobile Banking ditampilkan.
+  - Form input *"Uang Diterima"* dan panel *"Kembalian"* otomatis disembunyikan.
+  - Tombol *"Cetak Nota"* langsung aktif jika data form lengkap dan tagihan > Rp 0.
+
+- **Jika memilih "Cash"**:
+  - Kartu Barcode QRIS disembunyikan.
+  - Form input *"Uang Diterima"* dan panel *"Kembalian"* ditampilkan.
+  - Kembalian dihitung otomatis secara real-time via `DocumentListener`. Jika uang kurang, label berubah menjadi *"Uang Kurang!"* berwarna merah dan tombol Cetak Nota dinonaktifkan.
 
 ---
 
-## 🔧 Arsitektur Kode
+## 🖼️ Panduan Pengelolaan Aset Gambar QRIS (`qris_dummy.png`)
 
-### Separation of Concerns
-Logika kalkulasi dipisahkan ke method-method berikut:
-
-| Method | Tanggung Jawab |
-|--------|---------------|
-| `calculateTotal()` | Kalkulasi total biaya dari semua layanan yang dipilih, update ringkasan tagihan |
-| `updateKembalian()` | Kalkulasi kembalian (Cash) atau reset (QRIS), update visual kembalian |
-| `revalidateCetakButton()` | Validasi apakah tombol Cetak boleh aktif berdasarkan form + pembayaran |
-| `isFormValid()` | Cek kelengkapan & validitas data dasar (nama, bobot) |
-| `parseCash()` | Parse input uang diterima dengan aman (return 0 jika invalid) |
-
-### Listener Chain
+### 1. Lokasi Menaruh File Aset Gambar
+Secara default, aplikasi mencari file gambar dummy bernama **`qris_dummy.png`** langsung pada direktori utama (root) proyek:
 ```
-Input berubah
-    ↓
-DocumentListener / ActionListener
-    ↓
-calculateTotal()          → hitung total, update ringkasan
-    ↓
-updateKembalian()         → hitung kembalian, validasi cash
-    ↓
-revalidateCetakButton()   → enable/disable tombol cetak
+d:\StudyCase\Petcare\
+├── qris_dummy.png        <-- [TEMPAT FILE GAMBAR QRIS DEFAULT]
+├── PetCareGUI.java
+├── UIHelper.java
+├── PasienHewan.java
+├── LayananGrooming.java
+└── run.bat
 ```
 
-### Layout
-- Form kiri menggunakan `GridBagLayout` dengan `Insets(8, 15, 8, 15)` default
-- Checkbox layanan menggunakan `GridLayout(2, 3, 10, 6)` untuk susunan 2 baris × 3 kolom
-- Form dibungkus `JScrollPane` agar tetap bisa di-scroll pada jendela kecil
-- Panel kanan menggunakan `BorderLayout` dengan `BoxLayout` vertikal untuk bagian bawah (Total → Kembalian → Tombol)
+Anda juga dapat membuat folder khusus seperti `assets/` atau `images/` dan meletakkan gambar di sana (misal: `assets/qris_dummy.png`).
+
+### 2. Cara Mengubah Path Gambar di Source Code
+Untuk mengubah path file gambar QRIS, buka file **`PetCareGUI.java`** dan sesuaikan konstanta berikut pada bagian atas kelas:
+
+```java
+// =========================================================================
+// KONFIGURASI ASET GAMBAR QRIS (PetCareGUI.java)
+// =========================================================================
+// Ganti nilai string di bawah ini sesuai lokasi file gambar Anda:
+// Contoh jika di folder root   : "qris_dummy.png"
+// Contoh jika di subfolder     : "assets/qris_dummy.png"
+// Contoh path absolut Windows  : "C:/images/qris_clinic.png"
+private static final String QRIS_IMAGE_PATH = "qris_dummy.png";
+private static final int QRIS_BARCODE_WIDTH = 200;
+private static final int QRIS_BARCODE_HEIGHT = 200;
+```
+
+### 3. Image Scaling Proporsional
+Aplikasi menyediakan metode utilitas `UIHelper.loadAndScaleImage(path, width, height)` dan `UIHelper.scaleImage(...)` yang menggunakan algoritma `Image.SCALE_SMOOTH`:
+```java
+// Utilitas otomatis me-resize gambar ke 200x200 pixel tanpa distorsi:
+ImageIcon scaledIcon = UIHelper.loadAndScaleImage(QRIS_IMAGE_PATH, 200, 200);
+lblQrisBarcode.setIcon(scaledIcon);
+```
+
+> **Fallback Visual:** Jika file gambar tidak ditemukan pada path yang ditentukan, aplikasi tidak akan crash, melainkan menampilkan kotak placeholder elegan dengan garis putus-putus (*dashed border*) bertuliskan informasi lokasi file yang dicari.
 
 ---
 
-## 🐞 Original Issue (v1.0)
-Panel kiri "Registrasi Layanan" mengalami **overlapping komponen**:
-- `JLabel`, `JTextField`, dan `JComboBox` bertumpuk tanpa spacing
-- Sudah diperbaiki dengan `GridBagLayout` + explicit `Insets` + helper `addFormRow()`
-
----
-
-## 📖 How to Run
-```bat
-run.bat
+## 📂 Struktur Proyek
 ```
-Script ini akan mengkompilasi dan menjalankan aplikasi:
-```bat
-javac -cp ".;lib/*" *.java
-java -cp ".;lib/*" PetCareGUI
-```
-Pastikan folder `lib/` berisi **FlatLaf JAR** (`flatlaf-3.2.5.jar`).
-
----
-
-## ✅ Changelog
-
-### v2.0 (Current)
-| File | Perubahan |
-|------|-----------|
-| `PetCareGUI.java` | Tambah JComboBox "Dokter Pemeriksa" (Drh. Budi/Sarah/Andi). Tambah 3 layanan baru: Checkup Umum, Rawat Inap, Bedah Minor. Implementasi sistem pembayaran Cash/QRIS dengan kalkulasi kembalian real-time. Refactor logika ke `calculateTotal()`, `updateKembalian()`, `revalidateCetakButton()`. Form dibungkus JScrollPane. |
-| `README.md` | Dokumentasi lengkap fitur baru, tabel harga, diagram logika, dan arsitektur kode. |
-
-### v1.0
-| File | Perubahan |
-|------|-----------|
-| `PetCareGUI.java` | Refactor panel kiri ke `GridBagLayout` dengan insets, helper `addFormRow()`, fixed-height fields. |
-| `README.md` | Dokumentasi awal: masalah overlapping & solusi layout. |
-
----
-
-## 🎨 Visual Preview
-```
-┌──────────────────────────────┬──────────────────────────────┐
-│ 🐶 Registrasi Layanan       │ 🧾 Ringkasan Tagihan        │
-│                              │                              │
-│ Nama Pemilik  [___________]  │ PASIEN:                      │
-│ Nama Hewan    [___________]  │   Nama  : Mochi (Kucing)     │
-│ Jenis Hewan   [Kucing    ▼]  │   Owner : Andi               │
-│ Bobot (kg)    [___________]  │   Bobot : 3.5 kg             │
-│ Dokter        [Drh. Budi ▼]  │   Dokter: Drh. Budi          │
-│ Grooming      [Full Groom▼]  │                              │
-│                              │ RINCIAN BIAYA:               │
-│ Layanan Tambahan:            │   Grooming (Full)  Rp 100.000│
-│ [✓] Vaksinasi  [ ] Pakan     │   Vaksinasi        Rp 100.000│
-│ [✓] Checkup    [ ] Boarding  │   Checkup Umum     Rp  75.000│
-│ [ ] Bedah Minor              │                              │
-│                              │ METODE: Cash                 │
-│ Pembayaran    [Cash      ▼]  │                              │
-│ Uang Diterima [  300000   ]  │ TOTAL PEMBAYARAN             │
-│                              │              Rp 275.000      │
-│                              │ KEMBALIAN                    │
-│                              │              Rp  25.000      │
-│                              │ [    Cetak Nota    ]         │
-└──────────────────────────────┴──────────────────────────────┘
+d:\StudyCase\Petcare\
+├── PetCareGUI.java        # Main Dashboard GUI (Palet Biru & Logika QRIS/Cash)
+├── UIHelper.java          # Helper tema FlatLaf, warna Hex, & Image Scaling
+├── PasienHewan.java       # Model data pasien hewan & pemilik
+├── LayananGrooming.java   # Model data paket grooming
+├── qris_dummy.png         # Aset dummy QRIS Barcode (200x200 px)
+├── README.md              # Dokumentasi lengkap proyek
+├── run.bat                # Script batch launcher
+└── lib/
+    ├── flatlaf-3.2.5.jar  # Library FlatLaf Core
+    └── flatlaf-intellij-themes-3.2.5.jar
 ```
 
 ---
 
-*Dokumentasi ini otomatis diperbarui setiap kali fitur baru ditambahkan.*
+## 💉 Daftar Layanan & Tarif
+
+| Layanan | Biaya Dasar | Surcharge Bobot (>5kg) | Keterangan |
+|---------|------------|------------------------|------------|
+| **Grooming: Mandi Kutu** | Rp 50.000 | +Rp 20.000 | Termasuk shampo anti-kutu |
+| **Grooming: Potong Bulu** | Rp 40.000 | +Rp 20.000 | Perapian styling bulu |
+| **Grooming: Potong Kuku** | Rp 25.000 | +Rp 20.000 | Perawatan kuku steril |
+| **Grooming: Full Grooming**| Rp 100.000 | +Rp 20.000 | Paket lengkap menyeluruh |
+| **Vaksinasi** | Rp 100.000 | +Rp 20.000 | Vaksin tahunan / rabies |
+| **Pakan Khusus** | Rp 50.000 | — | Pakan nutrisi klinis |
+| **Checkup Umum** | Rp 75.000 | +Rp 20.000 | Pemeriksaan fisik dokter |
+| **Rawat Inap** | Rp 150.000 | — | Monitoring 24 jam di klinik |
+| **Bedah Minor** | Rp 250.000 | +Rp 20.000 | Sterilisasi & jahit luka |
+
+---
+
+## 🚀 Cara Menjalankan Aplikasi
+
+1. **Jalankan via Script Otomatis:**
+   Cukup klik dua kali atau jalankan file batch:
+   ```cmd
+   run.bat
+   ```
+
+2. **Jalankan via Terminal/Command Prompt Manual:**
+   ```cmd
+   javac -cp ".;lib/*" *.java
+   java -cp ".;lib/*" PetCareGUI
+   ```
+
+---
+
+## 📋 Ringkasan Perubahan (Changelog v3.0)
+- **UI Modernization**: Implementasi penuh **Custom Blue Palette** (`#FFFFFF`, `#c0e6fd`, `#80aad3`, `#5b86b6`, `#3f6593`, `#1b3554`, `#000f22`).
+- **Dynamic QRIS Payment**: Penambahan kartu barcode QRIS dengan `JLabel` (`lblQrisBarcode`), instruksi dinamis, dan penyembunyian form uang tunai saat QRIS aktif.
+- **Image Scaling Utility**: Utilitas me-resize gambar secara proporsional berukuran 200×200 pixel menggunakan `Image.SCALE_SMOOTH`.
+- **Documentation**: Penambahan panduan penempatan file aset gambar QRIS dan cara kustomisasi path di `PetCareGUI.java`.

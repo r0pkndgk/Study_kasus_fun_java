@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 
+@SuppressWarnings("unused")
 public class PetCareGUI extends JFrame {
     // --- FORM INPUT FIELDS ---
     private JTextField txtOwner, txtPetName, txtWeight;
@@ -59,8 +60,7 @@ public class PetCareGUI extends JFrame {
         pnlInput.setBackground(Color.WHITE);
         pnlInput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
-                new EmptyBorder(20, 20, 20, 20)
-        ));
+                new EmptyBorder(20, 20, 20, 20)));
         pnlInput.putClientProperty("FlatLaf.style", "arc: 20");
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -87,14 +87,17 @@ public class PetCareGUI extends JFrame {
         // Form rows: Data Pasien
         addFormRow(pnlInput, gbc, "Nama Pemilik", txtOwner = createFixedHeightField());
         addFormRow(pnlInput, gbc, "Nama Hewan", txtPetName = createFixedHeightField());
-        addFormRow(pnlInput, gbc, "Jenis Hewan", cbPetType = createComboBox(new String[]{"Kucing", "Anjing", "Kelinci", "Burung", "Lainnya"}));
+        addFormRow(pnlInput, gbc, "Jenis Hewan",
+                cbPetType = createComboBox(new String[] { "Kucing", "Anjing", "Kelinci", "Burung", "Lainnya" }));
         addFormRow(pnlInput, gbc, "Bobot Hewan (kg)", txtWeight = createFixedHeightField());
 
         // [FITUR BARU 1] Pemilihan Dokter Hewan
-        addFormRow(pnlInput, gbc, "Dokter Pemeriksa", cbDokter = createComboBox(new String[]{"Drh. Budi", "Drh. Sarah", "Drh. Andi"}));
+        addFormRow(pnlInput, gbc, "Dokter Pemeriksa",
+                cbDokter = createComboBox(new String[] { "Drh. Budi", "Drh. Sarah", "Drh. Andi" }));
 
         // Paket Grooming
-        addFormRow(pnlInput, gbc, "Paket Grooming", cbGrooming = createComboBox(new String[]{"Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku", "Full Grooming"}));
+        addFormRow(pnlInput, gbc, "Paket Grooming", cbGrooming = createComboBox(
+                new String[] { "Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku", "Full Grooming" }));
 
         // [FITUR BARU 2] Layanan Tambahan (extended checkboxes)
         gbc.gridy = ++formRow;
@@ -104,14 +107,14 @@ public class PetCareGUI extends JFrame {
         // Panel wrapper untuk semua checkbox layanan (2 baris, 3 kolom)
         JPanel pnlExtras = new JPanel(new GridLayout(2, 3, 10, 6));
         pnlExtras.setOpaque(false);
-        chkVaccine  = new JCheckBox("Vaksinasi");
-        chkFood     = new JCheckBox("Pakan");
-        chkCheckup  = new JCheckBox("Checkup Umum");
+        chkVaccine = new JCheckBox("Vaksinasi");
+        chkFood = new JCheckBox("Pakan");
+        chkCheckup = new JCheckBox("Checkup Umum");
         chkBoarding = new JCheckBox("Rawat Inap");
-        chkBedah    = new JCheckBox("Bedah Minor");
+        chkBedah = new JCheckBox("Bedah Minor");
 
         Font checkFont = new Font("Inter", Font.PLAIN, 13);
-        for (JCheckBox cb : new JCheckBox[]{chkVaccine, chkFood, chkCheckup, chkBoarding, chkBedah}) {
+        for (JCheckBox cb : new JCheckBox[] { chkVaccine, chkFood, chkCheckup, chkBoarding, chkBedah }) {
             cb.setFont(checkFont);
             cb.setOpaque(false);
             pnlExtras.add(cb);
@@ -119,7 +122,7 @@ public class PetCareGUI extends JFrame {
         addFormRow(pnlInput, gbc, "Layanan Tambahan", pnlExtras);
 
         // [FITUR BARU 3] Metode Pembayaran
-        addFormRow(pnlInput, gbc, "Metode Pembayaran", cbPayment = createComboBox(new String[]{"Cash", "QRIS"}));
+        addFormRow(pnlInput, gbc, "Metode Pembayaran", cbPayment = createComboBox(new String[] { "Cash", "QRIS" }));
 
         // Field Uang Diterima (hanya aktif saat Cash)
         lblCashReceivedLabel = new JLabel("Uang Diterima (Rp)");
@@ -153,8 +156,7 @@ public class PetCareGUI extends JFrame {
         pnlSummaryCard.setBackground(Color.WHITE);
         pnlSummaryCard.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
-                new EmptyBorder(25, 25, 25, 25)
-        ));
+                new EmptyBorder(25, 25, 25, 25)));
         pnlSummaryCard.putClientProperty("FlatLaf.style", "arc: 20");
 
         txtSummary = new JTextArea();
@@ -217,8 +219,8 @@ public class PetCareGUI extends JFrame {
         // Memuat gambar QRIS dari file.
         // ============================================================
         // GANTI PATH DI BAWAH INI dengan lokasi file gambar QRIS Anda.
-        // Contoh: "qris_dummy.png"       → file di folder yang sama
-        //         "assets/qris_dummy.png" → file di subfolder assets/
+        // Contoh: "qris_dummy.png" → file di folder yang sama
+        // "assets/qris_dummy.png" → file di subfolder assets/
         // ============================================================
         lblQrisBarcode = new JLabel();
         lblQrisBarcode.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -264,10 +266,10 @@ public class PetCareGUI extends JFrame {
                 kembalianStr = "Pembayaran    : QRIS (Lunas)";
             }
             JOptionPane.showMessageDialog(this,
-                "Nota berhasil dicetak!\n\n" + txtSummary.getText()
-                    + "\n" + kembalianStr
-                    + "\n\nTotal: Rp " + String.format("%,.0f", currentTotal),
-                "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    "Nota berhasil dicetak!\n\n" + txtSummary.getText()
+                            + "\n" + kembalianStr
+                            + "\n\nTotal: Rp " + String.format("%,.0f", currentTotal),
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
         });
     }
 
@@ -293,7 +295,8 @@ public class PetCareGUI extends JFrame {
     }
 
     /**
-     * Adds a label and its corresponding input component to the form using GridBagLayout.
+     * Adds a label and its corresponding input component to the form using
+     * GridBagLayout.
      * The method automatically advances the internal row counter.
      */
     private void addFormRow(JPanel panel, GridBagConstraints gbc, String labelText, JComponent comp) {
@@ -335,7 +338,8 @@ public class PetCareGUI extends JFrame {
      * Memuat gambar dari file dan me-resize ke ukuran yang ditentukan.
      * Menggunakan SCALE_SMOOTH untuk kualitas scaling terbaik.
      *
-     * @param path   Path file gambar (relatif terhadap working directory atau absolut)
+     * @param path   Path file gambar (relatif terhadap working directory atau
+     *               absolut)
      * @param width  Lebar target dalam pixel
      * @param height Tinggi target dalam pixel
      * @return ImageIcon yang sudah di-scale, atau null jika file tidak ditemukan
@@ -350,7 +354,8 @@ public class PetCareGUI extends JFrame {
             } else {
                 // Fallback: muat dari filesystem (working directory)
                 java.io.File file = new java.io.File(path);
-                if (!file.exists()) return null;
+                if (!file.exists())
+                    return null;
                 rawIcon = new ImageIcon(file.getAbsolutePath());
             }
             Image scaled = rawIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
@@ -363,14 +368,23 @@ public class PetCareGUI extends JFrame {
 
     /**
      * Setup all real-time listeners for form inputs.
-     * Listeners call calculateTotal() which updates both the summary and the payment section.
+     * Listeners call calculateTotal() which updates both the summary and the
+     * payment section.
      */
     private void setupRealTimeListeners() {
         // Document Listener untuk semua input teks
         DocumentListener docListener = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { calculateTotal(); }
-            public void removeUpdate(DocumentEvent e) { calculateTotal(); }
-            public void changedUpdate(DocumentEvent e) { calculateTotal(); }
+            public void insertUpdate(DocumentEvent e) {
+                calculateTotal();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                calculateTotal();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                calculateTotal();
+            }
         };
         txtOwner.getDocument().addDocumentListener(docListener);
         txtPetName.getDocument().addDocumentListener(docListener);
@@ -378,9 +392,17 @@ public class PetCareGUI extends JFrame {
 
         // DocumentListener khusus untuk field "Uang Diterima" → update kembalian
         DocumentListener cashListener = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { updateKembalian(); }
-            public void removeUpdate(DocumentEvent e) { updateKembalian(); }
-            public void changedUpdate(DocumentEvent e) { updateKembalian(); }
+            public void insertUpdate(DocumentEvent e) {
+                updateKembalian();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                updateKembalian();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                updateKembalian();
+            }
         };
         txtCashReceived.getDocument().addDocumentListener(cashListener);
 
@@ -481,7 +503,8 @@ public class PetCareGUI extends JFrame {
         String petName = txtPetName.getText().trim();
         String weightText = txtWeight.getText().trim();
 
-        if (owner.isEmpty() || petName.isEmpty() || weightText.isEmpty()) return false;
+        if (owner.isEmpty() || petName.isEmpty() || weightText.isEmpty())
+            return false;
         try {
             double w = Double.parseDouble(weightText);
             return w > 0;
@@ -506,15 +529,30 @@ public class PetCareGUI extends JFrame {
         UIHelper.setInvalidBorder(txtOwner, false);
         UIHelper.setInvalidBorder(txtPetName, false);
 
-        if (owner.isEmpty()) { UIHelper.setInvalidBorder(txtOwner, true); isValid = false; }
-        if (petName.isEmpty()) { UIHelper.setInvalidBorder(txtPetName, true); isValid = false; }
+        if (owner.isEmpty()) {
+            UIHelper.setInvalidBorder(txtOwner, true);
+            isValid = false;
+        }
+        if (petName.isEmpty()) {
+            UIHelper.setInvalidBorder(txtPetName, true);
+            isValid = false;
+        }
 
         double weight = 0;
-        if (weightText.isEmpty()) { UIHelper.setInvalidBorder(txtWeight, true); isValid = false; }
-        else {
-            try { weight = Double.parseDouble(weightText);
-                if (weight <= 0) { UIHelper.setInvalidBorder(txtWeight, true); isValid = false; }
-            } catch (NumberFormatException ex) { UIHelper.setInvalidBorder(txtWeight, true); isValid = false; }
+        if (weightText.isEmpty()) {
+            UIHelper.setInvalidBorder(txtWeight, true);
+            isValid = false;
+        } else {
+            try {
+                weight = Double.parseDouble(weightText);
+                if (weight <= 0) {
+                    UIHelper.setInvalidBorder(txtWeight, true);
+                    isValid = false;
+                }
+            } catch (NumberFormatException ex) {
+                UIHelper.setInvalidBorder(txtWeight, true);
+                isValid = false;
+            }
         }
 
         if (!isValid) {
@@ -536,10 +574,18 @@ public class PetCareGUI extends JFrame {
         String selectedGrooming = cbGrooming.getSelectedItem().toString();
         double baseGroomingCost = 0;
         switch (selectedGrooming) {
-            case "Mandi Kutu":    baseGroomingCost = 50000;  break;
-            case "Potong Bulu":   baseGroomingCost = 40000;  break;
-            case "Potong Kuku":   baseGroomingCost = 25000;  break;
-            case "Full Grooming": baseGroomingCost = 100000; break;
+            case "Mandi Kutu":
+                baseGroomingCost = 50000;
+                break;
+            case "Potong Bulu":
+                baseGroomingCost = 40000;
+                break;
+            case "Potong Kuku":
+                baseGroomingCost = 25000;
+                break;
+            case "Full Grooming":
+                baseGroomingCost = 100000;
+                break;
         }
         double weightSurcharge = (weight >= 5.0) ? 20000 : 0;
         double groomingCost = 0;
@@ -552,26 +598,28 @@ public class PetCareGUI extends JFrame {
 
         // Layanan lama
         double vaccineCost = chkVaccine.isSelected() ? (100000 + weightSurcharge) : 0;
-        double foodCost    = chkFood.isSelected()    ? 50000 : 0;
+        double foodCost = chkFood.isSelected() ? 50000 : 0;
 
         // [FITUR BARU 2] Layanan tambahan baru (surcharge berlaku pada checkup & bedah)
-        double checkupCost  = chkCheckup.isSelected()  ? (75000 + weightSurcharge)  : 0;
+        double checkupCost = chkCheckup.isSelected() ? (75000 + weightSurcharge) : 0;
         double boardingCost = chkBoarding.isSelected() ? 150000 : 0;
-        double bedahCost    = chkBedah.isSelected()    ? (250000 + weightSurcharge) : 0;
+        double bedahCost = chkBedah.isSelected() ? (250000 + weightSurcharge) : 0;
 
         currentTotal = groomingCost + vaccineCost + foodCost + checkupCost + boardingCost + bedahCost;
 
         // --- UPDATE SUMMARY UI ---
         StringBuilder sb = new StringBuilder();
         sb.append("PASIEN:\n");
-        sb.append(String.format("  Nama    : %s (%s)\n", currentPasien.getNamaPeliharaan(), currentPasien.getJenisHewan()));
+        sb.append(String.format("  Nama    : %s (%s)\n", currentPasien.getNamaPeliharaan(),
+                currentPasien.getJenisHewan()));
         sb.append(String.format("  Owner   : %s\n", currentPasien.getNamaOwner()));
         sb.append(String.format("  Bobot   : %.1f kg\n", currentPasien.getBobotKg()));
         sb.append(String.format("  Dokter  : %s\n\n", dokter));
 
         sb.append("RINCIAN BIAYA:\n");
         if (currentGrooming != null) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Grooming (" + currentGrooming.getPaket() + ")", currentGrooming.getBiayaLayanan()));
+            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Grooming (" + currentGrooming.getPaket() + ")",
+                    currentGrooming.getBiayaLayanan()));
         }
         if (chkVaccine.isSelected()) {
             sb.append(String.format("  %-22s: Rp %,10.0f\n", "Vaksinasi", vaccineCost));
