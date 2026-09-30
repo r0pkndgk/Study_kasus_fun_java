@@ -1,4 +1,8 @@
-public class LayananGrooming {
+import java.io.Serializable;
+
+public class LayananGrooming implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String paket;
     private double biayaLayanan;
 

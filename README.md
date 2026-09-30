@@ -1,166 +1,104 @@
 # PetCare Vet Clinic & Grooming
 
 ## Overview
-Aplikasi desktop Java Swing untuk manajemen klinik dokter hewan & layanan grooming hewan peliharaan (**PetCare Vet Clinic & Grooming**). Menggunakan framework Look-and-Feel modern **FlatLaf** dengan perombakan antarmuka pengguna berbasis **Custom Blue Palette** bergaya website klinik hewan profesional, kalkulasi tagihan invoice real-time, serta sistem pembayaran interaktif dinamis (**Cash** dan **QRIS Digital**).
+Aplikasi desktop Java Swing untuk manajemen klinik dokter hewan & layanan grooming hewan peliharaan (**PetCare Vet Clinic & Grooming**). Menggunakan framework Look-and-Feel modern **FlatLaf** dengan implementasi **Custom Blue Palette** yang diatur via `UIManager.put(...)` sebelum inisialisasi tema, struktur navigasi multi-tab (**JTabbedPane**), sistem pembayaran interaktif (**Cash & QRIS Digital**), serta pencatatan riwayat pemesanan berbasis tabel (**JTable CRUD**).
 
 ---
 
-## 🎨 Pembaruan Desain UI (Custom Blue Palette)
+## 🎨 Pembaruan Desain UI (Custom Blue Palette & UIManager Fix)
 
-Aplikasi telah direfaktor dengan palet warna khusus bertema estetika klinik medis modern yang bersih, lega (*spacious card-style*), dan elegan.
+Untuk memastikan palet warna kustom tidak tertimpa oleh tema bawaan FlatLaf, seluruh pengaturan warna didaftarkan menggunakan `UIManager.put(...)` **sebelum** pemanggilan `FlatMacLightLaf.setup()` / inisialisasi frame utama.
 
 ### 1. Spesifikasi Palet Warna (Hex Code)
-| Elemen UI | Hex Code | Peran & Deskripsi |
-|-----------|----------|-------------------|
-| **Background Panel Utama** | `#FFFFFF` | Latar belakang kartu (*Card*) form input & ringkasan tagihan. |
-| **Aksen Kartu & Header** | `#c0e6fd` | Biru paling terang untuk aksen header kartu dan kontainer kartu QRIS. |
-| **Background Dashboard** | `#F0F6FA` | Latar belakang dasar jendela aplikasi agar kartu terlihat kontras. |
-| **Border & Pemisah** | `#80aad3` | Garis tepi (*border*) panel kartu, separator tagihan, dan input focus. |
-| **Elemen Sekunder** | `#5b86b6` | Garis penegas dan label kategori sekunder. |
-| **Tombol Utama (Primary)** | `#3f6593` / `#1b3554` | Biru dominan tombol "Cetak Nota" dengan teks putih murni (`#FFFFFF`). |
-| **Teks Utama (Headings)** | `#000f22` | Biru paling gelap untuk judul, label penting, dan rincian biaya (bukan hitam murni). |
-
-### 2. Hirarki Tipografi & Styling FlatLaf
-- **Font Family**: Menggunakan font modern Sans-Serif (`Segoe UI` / `Inter`) yang tajam dan nyaman dibaca.
-- **Heading & Label**: Judul bagian ("🐾 Registrasi Layanan", "🧾 Ringkasan Tagihan") berukuran 22pt Bold dengan warna `#000f22`. Label form berukuran 13pt Bold.
-- **Rounded Corners**: Memanfaatkan properti FlatLaf (`Button.arc: 16`, `Component.arc: 14`, `FlatLaf.style: "arc: 20"`, serta `JButton.buttonType: "roundRect"`).
-- **Spacious Spacing**: Menggunakan kombinasi `EmptyBorder` dan padding luas pada setiap kartu agar antarmuka tidak terasa padat atau sesak.
+| Elemen UI | Hex Code | Properti FlatLaf / Peran |
+|-----------|----------|--------------------------|
+| **Background Utama** | `#FFFFFF` | `"RootPane.background"`, `"ScrollPane.background"`, `"TabbedPane.background"` |
+| **Background Panel / Kartu** | `#c0e6fd` | `"Panel.background"`, `"TabbedPane.selectedBackground"` (Biru Terang) |
+| **Border / Garis Pemisah** | `#80aad3` | `"Component.borderColor"`, `"Table.gridColor"`, `"Button.borderColor"` |
+| **Elemen Sekunder** | `#5b86b6` | `"Component.focusColor"`, `"Separator.foreground"` |
+| **Tombol Utama (Primary)** | `#3f6593` / `#1b3554` | `"Button.background"` & `"Button.hoverBackground"` (Teks: `#FFFFFF`) |
+| **Teks Utama (Foreground)** | `#000f22` | `"Label.foreground"`, `"Table.foreground"`, `"TabbedPane.foreground"` |
 
 ---
 
-## 💳 Fitur Pembayaran Dinamis (Cash vs QRIS)
+## 📑 Struktur Layout Multi-Tab (`JTabbedPane`)
 
-Sistem pembayaran mendukung dua mode transaksi dengan perubahan visibilitas komponen secara instan (*real-time reactive UI*):
+Aplikasi menggunakan antarmuka tab ganda untuk memisahkan alur transaksi aktif dengan arsip transaksi:
 
-### 1. Logika Interaktif Visibilitas
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Metode Pembayaran: [  Cash  ▼]                             │
-│                                                             │
-│  [✓] Input Uang Diterima (Rp) : DITAMPILKAN                 │
-│  [✓] Label & Nilai Kembalian  : DITAMPILKAN                 │
-│  [✗] Kartu Barcode QRIS       : DISEMBUNYIKAN               │
-└─────────────────────────────────────────────────────────────┘
+### Tab 1: "🐾 Registrasi Layanan"
+- **Formulir Pasien & Tindakan**: Input nama pemilik, nama hewan, jenis hewan, bobot tubuh (kg), dokter jaga, paket grooming, dan checkbox layanan tambahan.
+- **Sistem Pembayaran Dinamis**:
+  - **Cash**: Menampilkan input "Uang Diterima" dan kalkulasi "Kembalian" secara real-time. Jika uang kurang, label berwarna merah dan tombol Cetak dinonaktifkan.
+  - **QRIS**: Menampilkan kartu barcode QRIS (200x200 px proporsional) dan menyembunyikan input uang tunai.
+- **Cetak Nota & Auto-Save**: Saat tombol "Cetak Nota" diklik, nota resmi ditampilkan, pemesanan otomatis dicatat ke Tab 2 (Riwayat Pemesanan), dan form di-reset bersih untuk pasien berikutnya.
 
-┌─────────────────────────────────────────────────────────────┐
-│  Metode Pembayaran: [  QRIS  ▼]                             │
-│                                                             │
-│  [✗] Input Uang Diterima (Rp) : DISEMBUNYIKAN               │
-│  [✗] Label & Nilai Kembalian  : DISEMBUNYIKAN               │
-│  [✓] Kartu Barcode QRIS       : DITAMPILKAN                 │
-│      - Pesan: "Silakan scan QRIS berikut"                   │
-│      - Gambar Barcode QRIS (200x200 px proporsional)        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-- **Jika memilih "QRIS"**:
-  - Kartu Barcode QRIS (`pnlQrisCard`) muncul di bawah total tagihan dengan latar belakang `#c0e6fd` dan border `#80aad3`.
-  - Teks instruksi *"Silakan scan QRIS berikut"* dan sub-teks e-Wallet / Mobile Banking ditampilkan.
-  - Form input *"Uang Diterima"* dan panel *"Kembalian"* otomatis disembunyikan.
-  - Tombol *"Cetak Nota"* langsung aktif jika data form lengkap dan tagihan > Rp 0.
-
-- **Jika memilih "Cash"**:
-  - Kartu Barcode QRIS disembunyikan.
-  - Form input *"Uang Diterima"* dan panel *"Kembalian"* ditampilkan.
-  - Kembalian dihitung otomatis secara real-time via `DocumentListener`. Jika uang kurang, label berubah menjadi *"Uang Kurang!"* berwarna merah dan tombol Cetak Nota dinonaktifkan.
+### Tab 2: "📋 Riwayat Pemesanan" (Fitur Baru)
+- **Komponen**: `JTable` di dalam `JScrollPane` menggunakan `DefaultTableModel`.
+- **Kolom Tabel**:
+  1. `ID/No` (Auto-generated: `ORD-001`, `ORD-002`, dst.)
+  2. `Nama Pemilik`
+  3. `Nama Hewan`
+  4. `Layanan` (Rincian seluruh tindakan yang dipilih)
+  5. `Total Biaya` (Format mata uang Rupiah)
+  6. `Status Pembayaran` (Status: `Lunas (Cash)`, `Lunas (QRIS)`, atau `Selesai`)
+- **Aksi Interaktif (Tombol di Bawah Tabel)**:
+  - **✏️ Edit Pemesanan**: Mengambil data baris yang dipilih, mengembalikan seluruh input ke form Tab 1 agar dapat disesuaikan ulang, menghapus baris sementara dari tabel, dan memindahkan fokus user ke Tab 1.
+  - **❌ Batal / Hapus**: Menghapus pemesanan yang dipilih dari tabel setelah konfirmasi dialog.
+  - **✅ Selesai**: Mengubah nilai kolom status pemesanan menjadi `"Selesai"`.
 
 ---
 
 ## 🖼️ Panduan Pengelolaan Aset Gambar QRIS (`qris_dummy.png`)
 
-### 1. Lokasi Menaruh File Aset Gambar
-Secara default, aplikasi mencari file gambar dummy bernama **`qris_dummy.png`** langsung pada direktori utama (root) proyek:
+### 1. Lokasi File Gambar
+Secara default, file gambar barcode bernama **`qris_dummy.png`** diletakkan di root direktori proyek:
 ```
 d:\StudyCase\Petcare\
-├── qris_dummy.png        <-- [TEMPAT FILE GAMBAR QRIS DEFAULT]
+├── qris_dummy.png        <-- [FILE ASET GAMBAR QRIS]
 ├── PetCareGUI.java
 ├── UIHelper.java
+├── OrderRecord.java
 ├── PasienHewan.java
 ├── LayananGrooming.java
 └── run.bat
 ```
 
-Anda juga dapat membuat folder khusus seperti `assets/` atau `images/` dan meletakkan gambar di sana (misal: `assets/qris_dummy.png`).
-
-### 2. Cara Mengubah Path Gambar di Source Code
-Untuk mengubah path file gambar QRIS, buka file **`PetCareGUI.java`** dan sesuaikan konstanta berikut pada bagian atas kelas:
-
+### 2. Kustomisasi Path di Kode Sumber
+Buka [PetCareGUI.java](file:///d:/StudyCase/Petcare/PetCareGUI.java) dan ubah konstanta berikut jika gambar dipindahkan:
 ```java
-// =========================================================================
-// KONFIGURASI ASET GAMBAR QRIS (PetCareGUI.java)
-// =========================================================================
-// Ganti nilai string di bawah ini sesuai lokasi file gambar Anda:
-// Contoh jika di folder root   : "qris_dummy.png"
-// Contoh jika di subfolder     : "assets/qris_dummy.png"
-// Contoh path absolut Windows  : "C:/images/qris_clinic.png"
 private static final String QRIS_IMAGE_PATH = "qris_dummy.png";
 private static final int QRIS_BARCODE_WIDTH = 200;
 private static final int QRIS_BARCODE_HEIGHT = 200;
 ```
-
-### 3. Image Scaling Proporsional
-Aplikasi menyediakan metode utilitas `UIHelper.loadAndScaleImage(path, width, height)` dan `UIHelper.scaleImage(...)` yang menggunakan algoritma `Image.SCALE_SMOOTH`:
-```java
-// Utilitas otomatis me-resize gambar ke 200x200 pixel tanpa distorsi:
-ImageIcon scaledIcon = UIHelper.loadAndScaleImage(QRIS_IMAGE_PATH, 200, 200);
-lblQrisBarcode.setIcon(scaledIcon);
-```
-
-> **Fallback Visual:** Jika file gambar tidak ditemukan pada path yang ditentukan, aplikasi tidak akan crash, melainkan menampilkan kotak placeholder elegan dengan garis putus-putus (*dashed border*) bertuliskan informasi lokasi file yang dicari.
 
 ---
 
 ## 📂 Struktur Proyek
 ```
 d:\StudyCase\Petcare\
-├── PetCareGUI.java        # Main Dashboard GUI (Palet Biru & Logika QRIS/Cash)
-├── UIHelper.java          # Helper tema FlatLaf, warna Hex, & Image Scaling
-├── PasienHewan.java       # Model data pasien hewan & pemilik
-├── LayananGrooming.java   # Model data paket grooming
+├── PetCareGUI.java        # Main JFrame: JTabbedPane, Form Registrasi, dan Riwayat JTable
+├── UIHelper.java          # Utility FlatLaf, UIManager Color Overrides, & Image Scaling
+├── OrderRecord.java       # Model Data Pemesanan untuk integrasi JTable & fungsi Edit
+├── PasienHewan.java       # Model Data Pasien
+├── LayananGrooming.java   # Model Data Layanan Grooming
 ├── qris_dummy.png         # Aset dummy QRIS Barcode (200x200 px)
-├── README.md              # Dokumentasi lengkap proyek
-├── run.bat                # Script batch launcher
+├── README.md              # Dokumentasi lengkap
+├── run.bat                # Batch launcher otomatis
 └── lib/
-    ├── flatlaf-3.2.5.jar  # Library FlatLaf Core
+    ├── flatlaf-3.2.5.jar
     └── flatlaf-intellij-themes-3.2.5.jar
 ```
 
 ---
 
-## 💉 Daftar Layanan & Tarif
-
-| Layanan | Biaya Dasar | Surcharge Bobot (>5kg) | Keterangan |
-|---------|------------|------------------------|------------|
-| **Grooming: Mandi Kutu** | Rp 50.000 | +Rp 20.000 | Termasuk shampo anti-kutu |
-| **Grooming: Potong Bulu** | Rp 40.000 | +Rp 20.000 | Perapian styling bulu |
-| **Grooming: Potong Kuku** | Rp 25.000 | +Rp 20.000 | Perawatan kuku steril |
-| **Grooming: Full Grooming**| Rp 100.000 | +Rp 20.000 | Paket lengkap menyeluruh |
-| **Vaksinasi** | Rp 100.000 | +Rp 20.000 | Vaksin tahunan / rabies |
-| **Pakan Khusus** | Rp 50.000 | — | Pakan nutrisi klinis |
-| **Checkup Umum** | Rp 75.000 | +Rp 20.000 | Pemeriksaan fisik dokter |
-| **Rawat Inap** | Rp 150.000 | — | Monitoring 24 jam di klinik |
-| **Bedah Minor** | Rp 250.000 | +Rp 20.000 | Sterilisasi & jahit luka |
-
----
-
 ## 🚀 Cara Menjalankan Aplikasi
 
-1. **Jalankan via Script Otomatis:**
-   Cukup klik dua kali atau jalankan file batch:
-   ```cmd
-   run.bat
-   ```
-
-2. **Jalankan via Terminal/Command Prompt Manual:**
-   ```cmd
-   javac -cp ".;lib/*" *.java
-   java -cp ".;lib/*" PetCareGUI
-   ```
-
----
-
-## 📋 Ringkasan Perubahan (Changelog v3.0)
-- **UI Modernization**: Implementasi penuh **Custom Blue Palette** (`#FFFFFF`, `#c0e6fd`, `#80aad3`, `#5b86b6`, `#3f6593`, `#1b3554`, `#000f22`).
-- **Dynamic QRIS Payment**: Penambahan kartu barcode QRIS dengan `JLabel` (`lblQrisBarcode`), instruksi dinamis, dan penyembunyian form uang tunai saat QRIS aktif.
-- **Image Scaling Utility**: Utilitas me-resize gambar secara proporsional berukuran 200×200 pixel menggunakan `Image.SCALE_SMOOTH`.
-- **Documentation**: Penambahan panduan penempatan file aset gambar QRIS dan cara kustomisasi path di `PetCareGUI.java`.
+Jalankan via launcher batch:
+```cmd
+run.bat
+```
+Atau manual melalui command prompt:
+```cmd
+javac -cp ".;lib/*" *.java
+java -cp ".;lib/*" PetCareGUI
+```

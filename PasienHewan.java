@@ -1,4 +1,8 @@
-public class PasienHewan {
+import java.io.Serializable;
+
+public class PasienHewan implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String namaPeliharaan;
     private String jenisHewan;
     private String namaOwner;

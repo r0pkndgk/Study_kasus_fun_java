@@ -2,411 +2,422 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.image.BufferedImage;
+import java.awt.event.ItemEvent;
+import java.util.ArrayList;
 
-@SuppressWarnings("unused")
-public class PetCareGUI extends JFrame {
-    // --- FORM INPUT FIELDS ---
-    private JTextField txtOwner, txtPetName, txtWeight;
-    private JComboBox<String> cbPetType, cbGrooming, cbDokter;
-    private JCheckBox chkVaccine, chkFood, chkCheckup, chkBoarding, chkBedah;
+/**
+ * PetCare Vet Clinic & Grooming - Management Dashboard
+ * Versi Multi-Tab (JTabbedPane) dengan Custom Blue Palette FlatLaf
+ * dan Manajemen Riwayat Pemesanan (CRUD: Tambah, Edit, Hapus, Selesai).
+ * Mengikuti prinsip Clean Code, Zero Warnings, dan Java Best Practices.
+ */
+public final class PetCareGUI extends JFrame {
 
-    // --- PAYMENT FIELDS ---
+    private static final long serialVersionUID = 1L;
+
+    // =========================================================================
+    // KONFIGURASI ASET GAMBAR QRIS
+    // =========================================================================
+    private static final String QRIS_IMAGE_PATH = "qris_dummy.png";
+    private static final int QRIS_BARCODE_WIDTH = 200;
+    private static final int QRIS_BARCODE_HEIGHT = 200;
+
+    // --- MAIN CONTAINER ---
+    private JTabbedPane tabbedPane;
+
+    // --- TAB 1: FORM INPUT FIELDS ---
+    private JTextField txtOwner;
+    private JTextField txtPetName;
+    private JTextField txtWeight;
+    private JComboBox<String> cbPetType;
+    private JComboBox<String> cbGrooming;
+    private JComboBox<String> cbDokter;
+    private JCheckBox chkVaccine;
+    private JCheckBox chkFood;
+    private JCheckBox chkCheckup;
+    private JCheckBox chkBoarding;
+    private JCheckBox chkBedah;
+
+    // --- TAB 1: PAYMENT FIELDS ---
     private JComboBox<String> cbPayment;
+    private JPanel pnlCashInputRow;
+    private JLabel lblCashReceivedLabel;
     private JTextField txtCashReceived;
-    private JLabel lblCashReceivedLabel, lblKembalian, lblKembalianValue;
+    private JPanel pnlKembalian;
+    private JLabel lblKembalianValue;
 
-    // --- QRIS BARCODE ---
+    // --- TAB 1: QRIS BARCODE COMPONENTS ---
+    private JPanel pnlQrisCard;
     private JLabel lblQrisBarcode;
-    private JLabel lblQrisInstruction;
-    private JPanel pnlQrisContainer;
 
-    // --- SUMMARY FIELDS ---
+    // --- TAB 1: SUMMARY & ACTIONS ---
     private JTextArea txtSummary;
     private JLabel lblTotal;
     private JButton btnCetak;
+    private JPanel pnlInputForm;
+    private JPanel pnlRightSummary;
 
-    // --- STATE ---
+    // --- TAB 2: RIWAYAT PEMESANAN COMPONENTS ---
+    private JTable tblRiwayat;
+    private DefaultTableModel modelRiwayat;
+    private JButton btnEditPesanan;
+    private JButton btnHapusPesanan;
+    private JButton btnSelesaiPesanan;
+    private final ArrayList<OrderRecord> listOrder = new ArrayList<>();
+    private int orderCounter = 1;
+
+    // --- STATE DATA ---
     private double currentTotal = 0;
-    private PasienHewan currentPasien;
-    private LayananGrooming currentGrooming;
-
-    // Helper to keep track of the current row while building the form
     private int formRow = 0;
 
+    @SuppressWarnings("this-escape")
     public PetCareGUI() {
-        // 1. Inisialisasi Tema FlatLaf Light
-        UIHelper.setupFlatLaf();
+        initUI();
+    }
 
-        setTitle("PetCare Vet Clinic & Grooming - Dashboard");
-        setSize(1050, 780);
+    private void initUI() {
+        setTitle("PetCare Vet Clinic & Grooming - Management System");
+        setSize(1120, 840);
+        setMinimumSize(new Dimension(1000, 750));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Root Panel
-        JPanel rootPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        rootPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
-        rootPanel.setBackground(new Color(245, 247, 250)); // Light modern background
-        setContentPane(rootPanel);
+        // Inisialisasi JTabbedPane sebagai kontainer utama
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 14));
+        tabbedPane.setBackground(UIHelper.COLOR_BG_MAIN);
+        tabbedPane.setForeground(UIHelper.COLOR_TEXT_MAIN);
 
-        // --- KIRI: FORM INPUT (GridBagLayout + explicit insets) ---
-        JPanel pnlForm = new JPanel(new BorderLayout());
-        pnlForm.setOpaque(false);
+        // Tab 1: Registrasi Layanan & Invoice
+        final JPanel tabRegistrasi = buildTabRegistrasi();
+        tabbedPane.addTab("🐾 Registrasi Layanan", tabRegistrasi);
 
-        // Panel input menggunakan GridBagLayout dengan insets eksplisit
-        JPanel pnlInput = new JPanel(new GridBagLayout());
-        pnlInput.setBackground(Color.WHITE);
-        pnlInput.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
-                new EmptyBorder(20, 20, 20, 20)));
-        pnlInput.putClientProperty("FlatLaf.style", "arc: 20");
+        // Tab 2: Riwayat Pemesanan (CRUD)
+        final JPanel tabRiwayat = buildTabRiwayat();
+        tabbedPane.addTab("📋 Riwayat Pemesanan", tabRiwayat);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        Insets defaultInsets = new Insets(8, 15, 8, 15); // top, left, bottom, right
+        setContentPane(tabbedPane);
+
+        // Setup seluruh Event Listener
+        setupEventListeners();
+    }
+
+    // =========================================================================
+    // BUILDER: TAB 1 (REGISTRASI LAYANAN & NOTA PEMBAYARAN)
+    // =========================================================================
+    private JPanel buildTabRegistrasi() {
+        final JPanel rootPanel = new JPanel(new GridLayout(1, 2, 24, 0));
+        rootPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        rootPanel.setBackground(UIHelper.COLOR_BG_MAIN);
+
+        // --- PANEL KIRI: FORM INPUT ---
+        final JPanel pnlFormWrapper = new JPanel(new BorderLayout());
+        pnlFormWrapper.setOpaque(false);
+
+        pnlInputForm = new JPanel(new GridBagLayout());
+        pnlInputForm.setBackground(UIHelper.COLOR_BG_MAIN);
+        pnlInputForm.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true),
+                new EmptyBorder(20, 20, 20, 20)
+        ));
+        pnlInputForm.putClientProperty("FlatLaf.style", "arc: 20");
+
+        final GridBagConstraints gbc = new GridBagConstraints();
+        final Insets defaultInsets = new Insets(6, 10, 6, 10);
         gbc.insets = defaultInsets;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.weightx = 1.0;
 
-        // Header di baris pertama
+        // Header Panel Kiri
         gbc.gridx = 0;
         gbc.gridy = formRow;
         gbc.gridwidth = 2;
-        gbc.weighty = 0;
-        gbc.insets = new Insets(5, 15, 12, 15);
-        gbc.fill = GridBagConstraints.NONE;
-        JLabel lblHeaderForm = UIHelper.createHeaderLabel("\uD83D\uDC36 Registrasi Layanan");
-        pnlInput.add(lblHeaderForm, gbc);
-        gbc.gridwidth = 1; // reset
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 10, 12, 10);
+        final JPanel pnlHeaderLeft = createSectionHeader("🐾 Formulir Registrasi Pasien", "Input data pasien, dokter, dan paket layanan");
+        pnlInputForm.add(pnlHeaderLeft, gbc);
+        gbc.gridwidth = 1;
         gbc.insets = defaultInsets;
         formRow++;
 
-        // Form rows: Data Pasien
-        addFormRow(pnlInput, gbc, "Nama Pemilik", txtOwner = createFixedHeightField());
-        addFormRow(pnlInput, gbc, "Nama Hewan", txtPetName = createFixedHeightField());
-        addFormRow(pnlInput, gbc, "Jenis Hewan",
-                cbPetType = createComboBox(new String[] { "Kucing", "Anjing", "Kelinci", "Burung", "Lainnya" }));
-        addFormRow(pnlInput, gbc, "Bobot Hewan (kg)", txtWeight = createFixedHeightField());
+        // Form Fields
+        addFormRow(pnlInputForm, gbc, "Nama Pemilik", txtOwner = createStyledTextField());
+        addFormRow(pnlInputForm, gbc, "Nama Hewan", txtPetName = createStyledTextField());
+        addFormRow(pnlInputForm, gbc, "Jenis Hewan", cbPetType = createStyledComboBox(new String[]{"Kucing", "Anjing", "Kelinci", "Burung", "Lainnya"}));
+        addFormRow(pnlInputForm, gbc, "Bobot Hewan (kg)", txtWeight = createStyledTextField());
+        addFormRow(pnlInputForm, gbc, "Dokter Pemeriksa", cbDokter = createStyledComboBox(new String[]{"Drh. Budi", "Drh. Sarah", "Drh. Andi"}));
+        addFormRow(pnlInputForm, gbc, "Paket Grooming", cbGrooming = createStyledComboBox(new String[]{"Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku", "Full Grooming"}));
 
-        // [FITUR BARU 1] Pemilihan Dokter Hewan
-        addFormRow(pnlInput, gbc, "Dokter Pemeriksa",
-                cbDokter = createComboBox(new String[] { "Drh. Budi", "Drh. Sarah", "Drh. Andi" }));
-
-        // Paket Grooming
-        addFormRow(pnlInput, gbc, "Paket Grooming", cbGrooming = createComboBox(
-                new String[] { "Tidak Ada", "Mandi Kutu", "Potong Bulu", "Potong Kuku", "Full Grooming" }));
-
-        // [FITUR BARU 2] Layanan Tambahan (extended checkboxes)
+        // Layanan Tambahan (Checkbox Grid 2x3)
         gbc.gridy = ++formRow;
-        gbc.weightx = 1.0;
-        gbc.insets = defaultInsets;
-
-        // Panel wrapper untuk semua checkbox layanan (2 baris, 3 kolom)
-        JPanel pnlExtras = new JPanel(new GridLayout(2, 3, 10, 6));
+        final JPanel pnlExtras = new JPanel(new GridLayout(2, 3, 8, 6));
         pnlExtras.setOpaque(false);
-        chkVaccine = new JCheckBox("Vaksinasi");
-        chkFood = new JCheckBox("Pakan");
-        chkCheckup = new JCheckBox("Checkup Umum");
+        chkVaccine  = new JCheckBox("Vaksinasi");
+        chkFood     = new JCheckBox("Pakan");
+        chkCheckup  = new JCheckBox("Checkup");
         chkBoarding = new JCheckBox("Rawat Inap");
-        chkBedah = new JCheckBox("Bedah Minor");
+        chkBedah    = new JCheckBox("Bedah Minor");
 
-        Font checkFont = new Font("Inter", Font.PLAIN, 13);
-        for (JCheckBox cb : new JCheckBox[] { chkVaccine, chkFood, chkCheckup, chkBoarding, chkBedah }) {
+        final Font checkFont = new Font(UIHelper.FONT_FAMILY, Font.PLAIN, 13);
+        final JCheckBox[] checkBoxes = {chkVaccine, chkFood, chkCheckup, chkBoarding, chkBedah};
+        for (final JCheckBox cb : checkBoxes) {
             cb.setFont(checkFont);
+            cb.setForeground(UIHelper.COLOR_TEXT_MAIN);
             cb.setOpaque(false);
+            cb.setCursor(new Cursor(Cursor.HAND_CURSOR));
             pnlExtras.add(cb);
         }
-        addFormRow(pnlInput, gbc, "Layanan Tambahan", pnlExtras);
+        addFormRow(pnlInputForm, gbc, "Layanan Tambahan", pnlExtras);
 
-        // [FITUR BARU 3] Metode Pembayaran
-        addFormRow(pnlInput, gbc, "Metode Pembayaran", cbPayment = createComboBox(new String[] { "Cash", "QRIS" }));
+        // Metode Pembayaran
+        addFormRow(pnlInputForm, gbc, "Metode Pembayaran", cbPayment = createStyledComboBox(new String[]{"Cash", "QRIS"}));
 
-        // Field Uang Diterima (hanya aktif saat Cash)
+        // Field Uang Diterima (Hanya saat Cash)
+        pnlCashInputRow = new JPanel(new BorderLayout(0, 4));
+        pnlCashInputRow.setOpaque(false);
         lblCashReceivedLabel = new JLabel("Uang Diterima (Rp)");
-        txtCashReceived = createFixedHeightField();
-        addFormRow(pnlInput, gbc, "Uang Diterima (Rp)", txtCashReceived);
+        UIHelper.styleFormLabel(lblCashReceivedLabel);
+        txtCashReceived = createStyledTextField();
+        pnlCashInputRow.add(lblCashReceivedLabel, BorderLayout.NORTH);
+        pnlCashInputRow.add(txtCashReceived, BorderLayout.CENTER);
 
-        // Filler dengan weighty = 1.0 untuk mendorong form ke atas
+        gbc.gridx = 0;
         gbc.gridy = ++formRow;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.insets = defaultInsets;
-        pnlInput.add(new JLabel(), gbc);
+        gbc.insets = new Insets(4, 10, 10, 10);
+        pnlInputForm.add(pnlCashInputRow, gbc);
 
-        // Bungkus pnlInput dalam JScrollPane agar bisa di-scroll jika jendela kecil
-        JScrollPane scrollForm = new JScrollPane(pnlInput);
+        // Spacer Vertikal
+        gbc.gridy = ++formRow;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        pnlInputForm.add(Box.createGlue(), gbc);
+
+        final JScrollPane scrollForm = new JScrollPane(pnlInputForm);
         scrollForm.setBorder(null);
         scrollForm.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollForm.getVerticalScrollBar().setUnitIncrement(16);
-        pnlForm.add(scrollForm, BorderLayout.CENTER);
-        rootPanel.add(pnlForm);
+        pnlFormWrapper.add(scrollForm, BorderLayout.CENTER);
+        rootPanel.add(pnlFormWrapper);
 
-        // --- KANAN: LIVE SUMMARY & INVOICE ---
-        JPanel pnlRight = new JPanel(new BorderLayout(0, 15));
-        pnlRight.setOpaque(false);
+        // --- PANEL KANAN: RINGKASAN TAGIHAN & PEMBAYARAN ---
+        pnlRightSummary = new JPanel(new BorderLayout(0, 14));
+        pnlRightSummary.setOpaque(false);
 
-        JLabel lblHeaderSummary = UIHelper.createHeaderLabel("\uD83E\uDDFE Ringkasan Tagihan");
-        lblHeaderSummary.setBorder(new EmptyBorder(0, 0, 0, 0));
-        pnlRight.add(lblHeaderSummary, BorderLayout.NORTH);
-
-        JPanel pnlSummaryCard = new JPanel(new BorderLayout());
-        pnlSummaryCard.setBackground(Color.WHITE);
+        final JPanel pnlSummaryCard = new JPanel(new BorderLayout(0, 12));
+        pnlSummaryCard.setBackground(UIHelper.COLOR_BG_MAIN);
         pnlSummaryCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 225, 230), 1, true),
-                new EmptyBorder(25, 25, 25, 25)));
+                BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true),
+                new EmptyBorder(20, 20, 20, 20)
+        ));
         pnlSummaryCard.putClientProperty("FlatLaf.style", "arc: 20");
+
+        final JPanel pnlHeaderRight = createSectionHeader("🧾 Ringkasan Tagihan", "Rincian kalkulasi biaya tindakan dan invoice digital");
+        pnlSummaryCard.add(pnlHeaderRight, BorderLayout.NORTH);
 
         txtSummary = new JTextArea();
         txtSummary.setEditable(false);
-        txtSummary.setFont(new Font("Consolas", Font.PLAIN, 14));
-        txtSummary.setForeground(new Color(60, 70, 80));
-        txtSummary.setOpaque(false);
-        txtSummary.setText("Silakan lengkapi form di sebelah kiri\nuntuk melihat ringkasan tagihan.");
+        txtSummary.setFont(new Font("Consolas", Font.PLAIN, 13));
+        txtSummary.setForeground(UIHelper.COLOR_TEXT_MAIN);
+        txtSummary.setBackground(new Color(248, 251, 254));
+        txtSummary.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 225, 238), 1, true),
+                new EmptyBorder(12, 14, 12, 14)
+        ));
+        txtSummary.setText("Silakan lengkapi form di sebelah kiri\nuntuk melihat rincian tagihan medis & grooming.");
 
-        JScrollPane scrollSummary = new JScrollPane(txtSummary);
+        final JScrollPane scrollSummary = new JScrollPane(txtSummary);
         scrollSummary.setBorder(null);
         scrollSummary.setOpaque(false);
-        scrollSummary.getViewport().setOpaque(false);
         pnlSummaryCard.add(scrollSummary, BorderLayout.CENTER);
 
-        // Bagian Bawah Summary (Total, Kembalian & Tombol)
-        JPanel pnlBottomSummary = new JPanel();
+        // Bottom Summary: Total, Kembalian, QRIS Barcode & Tombol Cetak
+        final JPanel pnlBottomSummary = new JPanel();
         pnlBottomSummary.setLayout(new BoxLayout(pnlBottomSummary, BoxLayout.Y_AXIS));
         pnlBottomSummary.setOpaque(false);
 
-        // Panel Total
-        JPanel pnlTotal = new JPanel(new BorderLayout());
-        pnlTotal.setOpaque(false);
-        JLabel lblTotalTitle = new JLabel("TOTAL PEMBAYARAN");
-        lblTotalTitle.setFont(new Font("Inter", Font.BOLD, 14));
-        lblTotalTitle.setForeground(new Color(120, 130, 140));
+        // Total
+        final JPanel pnlTotalContainer = new JPanel(new BorderLayout());
+        pnlTotalContainer.setOpaque(false);
+        pnlTotalContainer.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 1, 0, UIHelper.COLOR_BORDER),
+                new EmptyBorder(8, 4, 8, 4)
+        ));
+        final JLabel lblTotalTitle = new JLabel("TOTAL TAGIHAN");
+        lblTotalTitle.setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 13));
+        lblTotalTitle.setForeground(UIHelper.COLOR_BORDER_DARK);
         lblTotal = UIHelper.createTotalLabel();
-        pnlTotal.add(lblTotalTitle, BorderLayout.NORTH);
-        pnlTotal.add(lblTotal, BorderLayout.CENTER);
-        pnlTotal.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)));
+        pnlTotalContainer.add(lblTotalTitle, BorderLayout.NORTH);
+        pnlTotalContainer.add(lblTotal, BorderLayout.CENTER);
+        pnlBottomSummary.add(pnlTotalContainer);
 
-        // Panel Kembalian
-        JPanel pnlKembalian = new JPanel(new BorderLayout());
+        // Kembalian (Mode Cash)
+        pnlKembalian = new JPanel(new BorderLayout());
         pnlKembalian.setOpaque(false);
-        pnlKembalian.setBorder(new EmptyBorder(8, 0, 8, 0));
-        JLabel lblKembalianTitle = new JLabel("KEMBALIAN");
-        lblKembalianTitle.setFont(new Font("Inter", Font.BOLD, 13));
-        lblKembalianTitle.setForeground(new Color(120, 130, 140));
+        pnlKembalian.setBorder(new EmptyBorder(6, 4, 6, 4));
+        final JLabel lblKembalianTitle = new JLabel("KEMBALIAN");
+        lblKembalianTitle.setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 12));
+        lblKembalianTitle.setForeground(UIHelper.COLOR_BORDER_DARK);
         lblKembalianValue = new JLabel("Rp 0");
-        lblKembalianValue.setFont(new Font("Inter", Font.BOLD, 24));
-        lblKembalianValue.setForeground(new Color(46, 172, 163));
+        lblKembalianValue.setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 22));
+        lblKembalianValue.setForeground(UIHelper.COLOR_PRIMARY);
         lblKembalianValue.setHorizontalAlignment(SwingConstants.RIGHT);
         pnlKembalian.add(lblKembalianTitle, BorderLayout.NORTH);
         pnlKembalian.add(lblKembalianValue, BorderLayout.CENTER);
+        pnlBottomSummary.add(pnlKembalian);
 
-        // --- [FITUR BARU] Panel QRIS Barcode ---
-        pnlQrisContainer = new JPanel();
-        pnlQrisContainer.setLayout(new BoxLayout(pnlQrisContainer, BoxLayout.Y_AXIS));
-        pnlQrisContainer.setOpaque(false);
-        pnlQrisContainer.setBorder(new EmptyBorder(10, 0, 10, 0));
-        pnlQrisContainer.setVisible(false); // Hidden by default (Cash mode)
+        // Card Barcode QRIS
+        pnlQrisCard = new JPanel();
+        pnlQrisCard.setLayout(new BoxLayout(pnlQrisCard, BoxLayout.Y_AXIS));
+        pnlQrisCard.setBackground(UIHelper.COLOR_CARD_ACCENT);
+        pnlQrisCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true),
+                new EmptyBorder(10, 14, 12, 14)
+        ));
+        pnlQrisCard.putClientProperty("FlatLaf.style", "arc: 16");
+        pnlQrisCard.setVisible(false);
 
-        lblQrisInstruction = new JLabel("Silakan scan QRIS berikut untuk membayar:");
-        lblQrisInstruction.setFont(new Font("Inter", Font.ITALIC, 13));
-        lblQrisInstruction.setForeground(new Color(80, 90, 100));
+        final JLabel lblQrisInstruction = new JLabel("Silakan scan QRIS berikut");
+        lblQrisInstruction.setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 14));
+        lblQrisInstruction.setForeground(UIHelper.COLOR_TEXT_MAIN);
         lblQrisInstruction.setAlignmentX(Component.CENTER_ALIGNMENT);
-        pnlQrisContainer.add(lblQrisInstruction);
-        pnlQrisContainer.add(Box.createVerticalStrut(10));
+        pnlQrisCard.add(lblQrisInstruction);
 
-        // Memuat gambar QRIS dari file.
-        // ============================================================
-        // GANTI PATH DI BAWAH INI dengan lokasi file gambar QRIS Anda.
-        // Contoh: "qris_dummy.png" → file di folder yang sama
-        // "assets/qris_dummy.png" → file di subfolder assets/
-        // ============================================================
+        final JLabel lblQrisSub = new JLabel("Mendukung GoPay, OVO, Dana, ShopeePay & M-Banking");
+        lblQrisSub.setFont(new Font(UIHelper.FONT_FAMILY, Font.PLAIN, 11));
+        lblQrisSub.setForeground(UIHelper.COLOR_PRIMARY_DARK);
+        lblQrisSub.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pnlQrisCard.add(lblQrisSub);
+        pnlQrisCard.add(Box.createVerticalStrut(8));
+
         lblQrisBarcode = new JLabel();
         lblQrisBarcode.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lblQrisBarcode.setHorizontalAlignment(SwingConstants.CENTER);
-        ImageIcon qrisIcon = loadScaledIcon("qris_dummy.png", 200, 200);
-        if (qrisIcon != null) {
-            lblQrisBarcode.setIcon(qrisIcon);
-        } else {
-            // Fallback jika file gambar tidak ditemukan
-            lblQrisBarcode.setText("[Gambar QRIS tidak ditemukan]");
-            lblQrisBarcode.setFont(new Font("Inter", Font.PLAIN, 12));
-            lblQrisBarcode.setForeground(new Color(180, 50, 50));
-            lblQrisBarcode.setPreferredSize(new Dimension(200, 200));
-            lblQrisBarcode.setBorder(BorderFactory.createDashedBorder(new Color(180, 50, 50), 2, 4, 4, true));
-        }
-        pnlQrisContainer.add(lblQrisBarcode);
+        setupQrisBarcodeImage();
+        pnlQrisCard.add(lblQrisBarcode);
 
+        pnlBottomSummary.add(pnlQrisCard);
+        pnlBottomSummary.add(Box.createVerticalStrut(10));
+
+        // Tombol Cetak Nota (Primary Button)
         btnCetak = UIHelper.createPrimaryButton("Cetak Nota");
-        btnCetak.setEnabled(false); // Disabled by default
-
-        pnlBottomSummary.add(pnlTotal);
-        pnlBottomSummary.add(pnlKembalian);
-        pnlBottomSummary.add(pnlQrisContainer);
-        pnlBottomSummary.add(Box.createVerticalStrut(8));
+        btnCetak.setEnabled(false);
+        btnCetak.setAlignmentX(Component.CENTER_ALIGNMENT);
         pnlBottomSummary.add(btnCetak);
 
         pnlSummaryCard.add(pnlBottomSummary, BorderLayout.SOUTH);
-        pnlRight.add(pnlSummaryCard, BorderLayout.CENTER);
-        rootPanel.add(pnlRight);
+        pnlRightSummary.add(pnlSummaryCard, BorderLayout.CENTER);
+        rootPanel.add(pnlRightSummary);
 
-        // --- SETUP LISTENER (INTERAKTIVITAS REAL-TIME) ---
-        setupRealTimeListeners();
+        return rootPanel;
+    }
 
-        // Cetak Action
-        btnCetak.addActionListener(e -> {
-            String payMethod = cbPayment.getSelectedItem().toString();
-            String kembalianStr = "";
-            if (payMethod.equals("Cash")) {
-                double cash = parseCash();
-                double kembalian = cash - currentTotal;
-                kembalianStr = String.format("Uang Diterima : Rp %,.0f\nKembalian      : Rp %,.0f", cash, kembalian);
-            } else {
-                kembalianStr = "Pembayaran    : QRIS (Lunas)";
+    // =========================================================================
+    // BUILDER: TAB 2 (RIWAYAT PEMESANAN & CRUD JTABLE)
+    // =========================================================================
+    private JPanel buildTabRiwayat() {
+        final JPanel pnlRiwayatWrapper = new JPanel(new BorderLayout(0, 16));
+        pnlRiwayatWrapper.setBorder(new EmptyBorder(20, 20, 20, 20));
+        pnlRiwayatWrapper.setBackground(UIHelper.COLOR_BG_MAIN);
+
+        // Header Tab Riwayat
+        final JPanel pnlHeader = createSectionHeader("📋 Riwayat Pemesanan Layanan",
+                "Daftar transaksi aktif. Pilih baris pemesanan untuk melakukan Edit, Batal/Hapus, atau Tandai Selesai.");
+        pnlRiwayatWrapper.add(pnlHeader, BorderLayout.NORTH);
+
+        // Struktur Tabel JTable dengan DefaultTableModel
+        final String[] columnNames = {"ID/No", "Nama Pemilik", "Nama Hewan", "Layanan", "Total Biaya", "Status Pembayaran"};
+        modelRiwayat = new DefaultTableModel(columnNames, 0) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Tabel read-only secara langsung, edit via tombol aksi
             }
-            JOptionPane.showMessageDialog(this,
-                    "Nota berhasil dicetak!\n\n" + txtSummary.getText()
-                            + "\n" + kembalianStr
-                            + "\n\nTotal: Rp " + String.format("%,.0f", currentTotal),
-                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
-        });
+        };
+
+        tblRiwayat = new JTable(modelRiwayat);
+        tblRiwayat.setRowHeight(36);
+        tblRiwayat.setFont(new Font(UIHelper.FONT_FAMILY, Font.PLAIN, 13));
+        tblRiwayat.setForeground(UIHelper.COLOR_TEXT_MAIN);
+        tblRiwayat.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblRiwayat.setSelectionBackground(UIHelper.COLOR_CARD_ACCENT);
+        tblRiwayat.setSelectionForeground(UIHelper.COLOR_TEXT_MAIN);
+        tblRiwayat.setShowGrid(true);
+        tblRiwayat.setGridColor(UIHelper.COLOR_BORDER);
+
+        // Header Tabel Styling
+        tblRiwayat.getTableHeader().setFont(new Font(UIHelper.FONT_FAMILY, Font.BOLD, 13));
+        tblRiwayat.getTableHeader().setBackground(UIHelper.COLOR_CARD_ACCENT);
+        tblRiwayat.getTableHeader().setForeground(UIHelper.COLOR_TEXT_MAIN);
+        tblRiwayat.getTableHeader().setPreferredSize(new Dimension(0, 38));
+
+        // Format Alignment Kolom
+        final DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        tblRiwayat.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // ID
+        tblRiwayat.getColumnModel().getColumn(4).setCellRenderer(centerRenderer); // Total Biaya
+        tblRiwayat.getColumnModel().getColumn(5).setCellRenderer(centerRenderer); // Status
+
+        // Lebar Kolom
+        tblRiwayat.getColumnModel().getColumn(0).setPreferredWidth(80);
+        tblRiwayat.getColumnModel().getColumn(1).setPreferredWidth(140);
+        tblRiwayat.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tblRiwayat.getColumnModel().getColumn(3).setPreferredWidth(260);
+        tblRiwayat.getColumnModel().getColumn(4).setPreferredWidth(130);
+        tblRiwayat.getColumnModel().getColumn(5).setPreferredWidth(140);
+
+        final JScrollPane scrollTable = new JScrollPane(tblRiwayat);
+        scrollTable.setBorder(BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true));
+        scrollTable.getViewport().setBackground(UIHelper.COLOR_BG_MAIN);
+        pnlRiwayatWrapper.add(scrollTable, BorderLayout.CENTER);
+
+        // Panel Tombol Aksi di Bawah Tabel
+        final JPanel pnlActionCard = UIHelper.createCardPanel(UIHelper.COLOR_CARD_ACCENT);
+        pnlActionCard.setLayout(new FlowLayout(FlowLayout.RIGHT, 14, 8));
+
+        btnEditPesanan = UIHelper.createSecondaryButton("✏️ Edit Pemesanan", UIHelper.COLOR_PRIMARY);
+        btnHapusPesanan = UIHelper.createSecondaryButton("❌ Batal / Hapus", UIHelper.COLOR_PRIMARY_DARK);
+        btnSelesaiPesanan = UIHelper.createSecondaryButton("✅ Selesai", UIHelper.COLOR_BORDER_DARK);
+
+        pnlActionCard.add(btnEditPesanan);
+        pnlActionCard.add(btnHapusPesanan);
+        pnlActionCard.add(btnSelesaiPesanan);
+
+        pnlRiwayatWrapper.add(pnlActionCard, BorderLayout.SOUTH);
+        return pnlRiwayatWrapper;
     }
 
-    /**
-     * Utility method to create a JTextField with a fixed maximum height
-     * so it only expands horizontally.
-     */
-    private JTextField createFixedHeightField() {
-        JTextField field = new JTextField();
-        Dimension pref = field.getPreferredSize();
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, pref.height));
-        return field;
-    }
-
-    /**
-     * Utility method to create a JComboBox with a fixed maximum height.
-     */
-    private JComboBox<String> createComboBox(String[] items) {
-        JComboBox<String> combo = new JComboBox<>(items);
-        Dimension pref = combo.getPreferredSize();
-        combo.setMaximumSize(new Dimension(Integer.MAX_VALUE, pref.height));
-        return combo;
-    }
-
-    /**
-     * Adds a label and its corresponding input component to the form using
-     * GridBagLayout.
-     * The method automatically advances the internal row counter.
-     */
-    private void addFormRow(JPanel panel, GridBagConstraints gbc, String labelText, JComponent comp) {
-        // Label
-        gbc.gridx = 0;
-        gbc.gridy = formRow;
-        gbc.weightx = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
-        JLabel label = new JLabel(labelText);
-        UIHelper.styleFormLabel(label);
-        panel.add(label, gbc);
-
-        // Input component
-        gbc.gridx = 0;
-        gbc.gridy = ++formRow;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(3, 10, 10, 10); // vertical spacing between rows
-        panel.add(comp, gbc);
-        // Reset insets for next label
-        gbc.insets = new Insets(8, 15, 8, 15);
-        formRow++;
-    }
-
-    /**
-     * Parse the cash received field safely, returning 0 if invalid.
-     */
-    private double parseCash() {
-        try {
-            String text = txtCashReceived.getText().trim().replace(",", "").replace(".", "");
-            return Double.parseDouble(text);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Memuat gambar dari file dan me-resize ke ukuran yang ditentukan.
-     * Menggunakan SCALE_SMOOTH untuk kualitas scaling terbaik.
-     *
-     * @param path   Path file gambar (relatif terhadap working directory atau
-     *               absolut)
-     * @param width  Lebar target dalam pixel
-     * @param height Tinggi target dalam pixel
-     * @return ImageIcon yang sudah di-scale, atau null jika file tidak ditemukan
-     */
-    private ImageIcon loadScaledIcon(String path, int width, int height) {
-        try {
-            // Coba muat dari classpath terlebih dahulu
-            java.net.URL url = getClass().getResource("/" + path);
-            ImageIcon rawIcon;
-            if (url != null) {
-                rawIcon = new ImageIcon(url);
-            } else {
-                // Fallback: muat dari filesystem (working directory)
-                java.io.File file = new java.io.File(path);
-                if (!file.exists())
-                    return null;
-                rawIcon = new ImageIcon(file.getAbsolutePath());
-            }
-            Image scaled = rawIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
-        } catch (Exception e) {
-            System.err.println("Gagal memuat gambar QRIS: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Setup all real-time listeners for form inputs.
-     * Listeners call calculateTotal() which updates both the summary and the
-     * payment section.
-     */
-    private void setupRealTimeListeners() {
-        // Document Listener untuk semua input teks
-        DocumentListener docListener = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                calculateTotal();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                calculateTotal();
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                calculateTotal();
-            }
+    // =========================================================================
+    // EVENT LISTENERS & LOGIKA INTERAKTIF
+    // =========================================================================
+    private void setupEventListeners() {
+        // Document Listener untuk Form Input
+        final DocumentListener docListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { calculateTotal(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { calculateTotal(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { calculateTotal(); }
         };
         txtOwner.getDocument().addDocumentListener(docListener);
         txtPetName.getDocument().addDocumentListener(docListener);
         txtWeight.getDocument().addDocumentListener(docListener);
 
-        // DocumentListener khusus untuk field "Uang Diterima" → update kembalian
-        DocumentListener cashListener = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                updateKembalian();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                updateKembalian();
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                updateKembalian();
-            }
+        // Listener khusus Input Uang Diterima
+        final DocumentListener cashListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { updateKembalian(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { updateKembalian(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { updateKembalian(); }
         };
         txtCashReceived.getDocument().addDocumentListener(cashListener);
 
-        // Action Listener untuk semua combo box & checkbox
+        // Action Listener ComboBox & Checkbox
         cbPetType.addActionListener(e -> calculateTotal());
         cbGrooming.addActionListener(e -> calculateTotal());
         cbDokter.addActionListener(e -> calculateTotal());
@@ -416,127 +427,259 @@ public class PetCareGUI extends JFrame {
         chkBoarding.addActionListener(e -> calculateTotal());
         chkBedah.addActionListener(e -> calculateTotal());
 
-        // Listener untuk metode pembayaran (Cash / QRIS toggle)
-        cbPayment.addActionListener(e -> {
-            boolean isCash = cbPayment.getSelectedItem().toString().equals("Cash");
+        // Toggle Cash vs QRIS
+        cbPayment.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                final boolean isQris = "QRIS".equalsIgnoreCase(cbPayment.getSelectedItem().toString());
+                pnlQrisCard.setVisible(isQris);
+                pnlCashInputRow.setVisible(!isQris);
+                pnlKembalian.setVisible(!isQris);
 
-            // Toggle visibilitas: Cash fields vs QRIS barcode
-            txtCashReceived.setEnabled(isCash);
-            txtCashReceived.setEditable(isCash);
-            txtCashReceived.setVisible(isCash);
-            pnlQrisContainer.setVisible(!isCash);
-
-            if (!isCash) {
-                // QRIS mode: kosongkan input cash, kembalian = 0
-                txtCashReceived.setText("");
-                lblKembalianValue.setText("Rp 0");
-                lblKembalianValue.setForeground(new Color(46, 172, 163));
+                if (isQris) {
+                    txtCashReceived.setText("");
+                    lblKembalianValue.setText("Rp 0");
+                    lblKembalianValue.setForeground(UIHelper.COLOR_PRIMARY);
+                }
+                updateKembalian();
+                pnlInputForm.revalidate();
+                pnlInputForm.repaint();
+                pnlRightSummary.revalidate();
+                pnlRightSummary.repaint();
             }
-            updateKembalian();
-
-            // Revalidate layout agar perubahan visibilitas langsung terlihat
-            pnlQrisContainer.getParent().revalidate();
-            pnlQrisContainer.getParent().repaint();
         });
+
+        // 1. Cetak Nota Action -> Simpan ke Tabel Riwayat & Reset Form
+        btnCetak.addActionListener(e -> handleCetakNota());
+
+        // 2. Tombol Edit Pemesanan
+        btnEditPesanan.addActionListener(e -> handleEditPemesanan());
+
+        // 3. Tombol Batal / Hapus Pemesanan
+        btnHapusPesanan.addActionListener(e -> handleHapusPemesanan());
+
+        // 4. Tombol Tandai Selesai
+        btnSelesaiPesanan.addActionListener(e -> handleSelesaiPemesanan());
     }
 
     /**
-     * Kalkulasi kembalian berdasarkan uang diterima dan total tagihan.
-     * Menampilkan peringatan visual jika uang tidak cukup.
+     * Handler saat tombol "Cetak Nota" diklik:
+     * - Menampilkan dialog nota
+     * - Menyimpan data pemesanan ke model JTable di Tab 2
+     * - Melakukan reset form di Tab 1
      */
-    private void updateKembalian() {
-        String payMethod = cbPayment.getSelectedItem().toString();
+    private void handleCetakNota() {
+        if (!isFormValid() || currentTotal <= 0) return;
 
-        if (payMethod.equals("QRIS")) {
-            lblKembalianValue.setText("Rp 0");
-            lblKembalianValue.setForeground(new Color(46, 172, 163));
-            // QRIS: tombol cetak mengikuti validasi form saja
-            revalidateCetakButton();
+        final String payMethod = cbPayment.getSelectedItem().toString();
+        final double cash = parseCash();
+        final double kembalian = cash - currentTotal;
+        final String kembalianStr = payMethod.equals("Cash")
+                ? String.format("Metode        : Cash\nUang Diterima : Rp %,.0f\nKembalian     : Rp %,.0f", cash, kembalian)
+                : "Metode        : QRIS Digital (Status: Lunas)";
+
+        // Buat ID Pemesanan Unik
+        final String orderId = String.format("ORD-%03d", orderCounter++);
+        final String initialStatus = payMethod.equals("Cash") ? "Lunas (Cash)" : "Lunas (QRIS)";
+
+        // Simpan ke Object Model OrderRecord
+        final OrderRecord record = new OrderRecord(
+                orderId,
+                txtOwner.getText().trim(),
+                txtPetName.getText().trim(),
+                cbPetType.getSelectedItem().toString(),
+                Double.parseDouble(txtWeight.getText().trim()),
+                cbDokter.getSelectedItem().toString(),
+                cbGrooming.getSelectedItem().toString(),
+                chkVaccine.isSelected(),
+                chkFood.isSelected(),
+                chkCheckup.isSelected(),
+                chkBoarding.isSelected(),
+                chkBedah.isSelected(),
+                payMethod,
+                cash,
+                currentTotal,
+                initialStatus
+        );
+
+        listOrder.add(record);
+
+        // Tambahkan baris baru ke JTable di Tab 2
+        modelRiwayat.addRow(new Object[]{
+                record.getId(),
+                record.getOwnerName(),
+                record.getPetName(),
+                record.getServicesSummary(),
+                String.format("Rp %,.0f", record.getTotalCost()),
+                record.getStatus()
+        });
+
+        // Tampilkan dialog nota
+        JOptionPane.showMessageDialog(this,
+                "=========================================\n"
+                        + "      NOTA RESMI PETCARE CLINIC\n"
+                        + "=========================================\n"
+                        + "No. Pemesanan : " + orderId + "\n\n"
+                        + txtSummary.getText()
+                        + "\n-----------------------------------------\n"
+                        + kembalianStr
+                        + "\n-----------------------------------------\n"
+                        + "TOTAL BAYAR   : Rp " + String.format("%,.0f", currentTotal)
+                        + "\n\nData pemesanan telah tersimpan di Tab 'Riwayat Pemesanan'!",
+                "Cetak Nota Berhasil", JOptionPane.INFORMATION_MESSAGE);
+
+        // Reset Formulir Registrasi
+        resetForm();
+    }
+
+    /**
+     * Handler saat tombol "Edit Pemesanan" diklik:
+     * - Mengambil data dari baris tabel yang dipilih
+     * - Mengembalikan data ke form di Tab 1
+     * - Menghapus baris dari tabel sementara
+     * - Memindahkan fokus tab ke Tab 1
+     */
+    private void handleEditPemesanan() {
+        final int selectedRow = tblRiwayat.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Silakan pilih baris pemesanan yang ingin diedit terlebih dahulu!",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // Cash mode
-        double cash = parseCash();
-        if (txtCashReceived.getText().trim().isEmpty()) {
-            lblKembalianValue.setText("Rp 0");
-            lblKembalianValue.setForeground(new Color(46, 172, 163));
-            btnCetak.setEnabled(false);
-            return;
-        }
+        final OrderRecord record = listOrder.get(selectedRow);
 
-        double kembalian = cash - currentTotal;
-        if (kembalian < 0) {
-            lblKembalianValue.setText("Uang Tidak Cukup!");
-            lblKembalianValue.setForeground(new Color(220, 50, 50)); // merah
-            btnCetak.setEnabled(false);
+        // Pindahkan data kembali ke formulir Tab 1
+        txtOwner.setText(record.getOwnerName());
+        txtPetName.setText(record.getPetName());
+        cbPetType.setSelectedItem(record.getPetType());
+        txtWeight.setText(String.valueOf(record.getWeight()));
+        cbDokter.setSelectedItem(record.getDoctor());
+        cbGrooming.setSelectedItem(record.getGroomingPackage());
+
+        chkVaccine.setSelected(record.isVaccine());
+        chkFood.setSelected(record.isFood());
+        chkCheckup.setSelected(record.isCheckup());
+        chkBoarding.setSelected(record.isBoarding());
+        chkBedah.setSelected(record.isBedah());
+
+        cbPayment.setSelectedItem(record.getPaymentMethod());
+        if ("Cash".equalsIgnoreCase(record.getPaymentMethod())) {
+            txtCashReceived.setText(String.format("%.0f", record.getCashReceived()));
         } else {
-            lblKembalianValue.setText(String.format("Rp %,.0f", kembalian));
-            lblKembalianValue.setForeground(new Color(46, 172, 163));
-            revalidateCetakButton();
+            txtCashReceived.setText("");
         }
+
+        // Hapus pemesanan dari tabel dan list sementara
+        modelRiwayat.removeRow(selectedRow);
+        listOrder.remove(selectedRow);
+
+        // Pindah fokus kembali ke Tab 1 (Registrasi Layanan)
+        tabbedPane.setSelectedIndex(0);
+
+        // Hitung ulang tagihan
+        calculateTotal();
+
+        JOptionPane.showMessageDialog(this,
+                "Data pemesanan [" + record.getId() + "] telah dikembalikan ke formulir Tab Registrasi.\n"
+                        + "Silakan sesuaikan data yang diperlukan lalu klik 'Cetak Nota' kembali.",
+                "Mode Edit Aktif", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
-     * Revalidasi apakah tombol Cetak boleh aktif.
-     * Tombol aktif jika form valid DAN (QRIS dipilih ATAU cash cukup).
+     * Handler saat tombol "Batal / Hapus" diklik.
      */
-    private void revalidateCetakButton() {
-        if (!isFormValid()) {
-            btnCetak.setEnabled(false);
+    private void handleHapusPemesanan() {
+        final int selectedRow = tblRiwayat.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Silakan pilih baris pemesanan yang ingin dibatalkan/dihapus!",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        String payMethod = cbPayment.getSelectedItem().toString();
-        if (payMethod.equals("Cash")) {
-            double cash = parseCash();
-            btnCetak.setEnabled(cash >= currentTotal && currentTotal > 0);
-        } else {
-            // QRIS: langsung enable jika form valid dan ada layanan
-            btnCetak.setEnabled(currentTotal > 0);
+
+        final String orderId = modelRiwayat.getValueAt(selectedRow, 0).toString();
+        final int confirm = JOptionPane.showConfirmDialog(this,
+                "Apakah Anda yakin ingin membatalkan dan menghapus pemesanan [" + orderId + "]?",
+                "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            modelRiwayat.removeRow(selectedRow);
+            listOrder.remove(selectedRow);
+            JOptionPane.showMessageDialog(this,
+                    "Pemesanan [" + orderId + "] berhasil dibatalkan dan dihapus.",
+                    "Sukses", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     /**
-     * Cek validitas dasar form (nama owner, nama hewan, bobot valid).
+     * Handler saat tombol "Selesai" diklik:
+     * Mengubah status pemesanan di tabel menjadi "Selesai".
      */
-    private boolean isFormValid() {
-        String owner = txtOwner.getText().trim();
-        String petName = txtPetName.getText().trim();
-        String weightText = txtWeight.getText().trim();
-
-        if (owner.isEmpty() || petName.isEmpty() || weightText.isEmpty())
-            return false;
-        try {
-            double w = Double.parseDouble(weightText);
-            return w > 0;
-        } catch (NumberFormatException e) {
-            return false;
+    private void handleSelesaiPemesanan() {
+        final int selectedRow = tblRiwayat.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Silakan pilih baris pemesanan yang ingin diselesaikan!",
+                    "Peringatan", JOptionPane.WARNING_MESSAGE);
+            return;
         }
+
+        final String orderId = modelRiwayat.getValueAt(selectedRow, 0).toString();
+        modelRiwayat.setValueAt("Selesai", selectedRow, 5);
+        listOrder.get(selectedRow).setStatus("Selesai");
+
+        JOptionPane.showMessageDialog(this,
+                "Pemesanan [" + orderId + "] telah ditandai sebagai Selesai!",
+                "Sukses", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**
-     * Kalkulasi total harga dan update ringkasan tagihan secara real-time.
-     * Method ini dipanggil oleh semua listener (Document, Action, Item).
+     * Mengosongkan formulir input registrasi setelah transaksi selesai.
      */
+    private void resetForm() {
+        txtOwner.setText("");
+        txtPetName.setText("");
+        cbPetType.setSelectedIndex(0);
+        txtWeight.setText("");
+        cbDokter.setSelectedIndex(0);
+        cbGrooming.setSelectedIndex(0);
+
+        chkVaccine.setSelected(false);
+        chkFood.setSelected(false);
+        chkCheckup.setSelected(false);
+        chkBoarding.setSelected(false);
+        chkBedah.setSelected(false);
+
+        cbPayment.setSelectedIndex(0);
+        txtCashReceived.setText("");
+        currentTotal = 0;
+
+        lblTotal.setText("Rp 0");
+        lblKembalianValue.setText("Rp 0");
+        btnCetak.setEnabled(false);
+        txtSummary.setText("Silakan lengkapi form di sebelah kiri\nuntuk melihat rincian tagihan medis & grooming.");
+
+        UIHelper.setInvalidBorder(txtOwner, false);
+        UIHelper.setInvalidBorder(txtPetName, false);
+        UIHelper.setInvalidBorder(txtWeight, false);
+    }
+
+    // =========================================================================
+    // KALKULASI TAGIHAN & VALIDASI
+    // =========================================================================
     private void calculateTotal() {
-        String owner = txtOwner.getText().trim();
-        String petName = txtPetName.getText().trim();
-        String weightText = txtWeight.getText().trim();
+        final String owner = txtOwner.getText().trim();
+        final String petName = txtPetName.getText().trim();
+        final String weightText = txtWeight.getText().trim();
 
         boolean isValid = true;
-
-        // Reset visual validation
         UIHelper.setInvalidBorder(txtWeight, false);
         UIHelper.setInvalidBorder(txtOwner, false);
         UIHelper.setInvalidBorder(txtPetName, false);
 
-        if (owner.isEmpty()) {
-            UIHelper.setInvalidBorder(txtOwner, true);
-            isValid = false;
-        }
-        if (petName.isEmpty()) {
-            UIHelper.setInvalidBorder(txtPetName, true);
-            isValid = false;
-        }
+        if (owner.isEmpty()) { UIHelper.setInvalidBorder(txtOwner, true); isValid = false; }
+        if (petName.isEmpty()) { UIHelper.setInvalidBorder(txtPetName, true); isValid = false; }
 
         double weight = 0;
         if (weightText.isEmpty()) {
@@ -545,10 +688,7 @@ public class PetCareGUI extends JFrame {
         } else {
             try {
                 weight = Double.parseDouble(weightText);
-                if (weight <= 0) {
-                    UIHelper.setInvalidBorder(txtWeight, true);
-                    isValid = false;
-                }
+                if (weight <= 0) { UIHelper.setInvalidBorder(txtWeight, true); isValid = false; }
             } catch (NumberFormatException ex) {
                 UIHelper.setInvalidBorder(txtWeight, true);
                 isValid = false;
@@ -560,102 +700,233 @@ public class PetCareGUI extends JFrame {
             currentTotal = 0;
             lblTotal.setText("Rp 0");
             lblKembalianValue.setText("Rp 0");
-            lblKembalianValue.setForeground(new Color(46, 172, 163));
-            txtSummary.setText("Data belum lengkap atau format tidak valid.\nSilakan lengkapi form dengan benar.");
+            txtSummary.setText("Silakan lengkapi formulir di sebelah kiri dengan data yang valid.");
             return;
         }
 
-        // --- KALKULASI BIAYA ---
-        String petType = cbPetType.getSelectedItem().toString();
-        String dokter = cbDokter.getSelectedItem().toString();
-        currentPasien = new PasienHewan(petName, petType, owner, weight);
+        final String petType = cbPetType.getSelectedItem().toString();
+        final String dokter = cbDokter.getSelectedItem().toString();
+        final PasienHewan pasien = new PasienHewan(petName, petType, owner, weight);
 
         // Grooming
-        String selectedGrooming = cbGrooming.getSelectedItem().toString();
-        double baseGroomingCost = 0;
+        final String selectedGrooming = cbGrooming.getSelectedItem().toString();
+        double baseGrooming = 0;
         switch (selectedGrooming) {
-            case "Mandi Kutu":
-                baseGroomingCost = 50000;
-                break;
-            case "Potong Bulu":
-                baseGroomingCost = 40000;
-                break;
-            case "Potong Kuku":
-                baseGroomingCost = 25000;
-                break;
-            case "Full Grooming":
-                baseGroomingCost = 100000;
-                break;
+            case "Mandi Kutu":    baseGrooming = 50000;  break;
+            case "Potong Bulu":   baseGrooming = 40000;  break;
+            case "Potong Kuku":   baseGrooming = 25000;  break;
+            case "Full Grooming": baseGrooming = 100000; break;
+            default:              baseGrooming = 0;      break;
         }
-        double weightSurcharge = (weight >= 5.0) ? 20000 : 0;
+        final double surcharge = (weight >= 5.0) ? 20000 : 0;
         double groomingCost = 0;
-        if (baseGroomingCost > 0) {
-            groomingCost = baseGroomingCost + weightSurcharge;
-            currentGrooming = new LayananGrooming(selectedGrooming, groomingCost);
-        } else {
-            currentGrooming = null;
+        LayananGrooming grooming = null;
+        if (baseGrooming > 0) {
+            groomingCost = baseGrooming + surcharge;
+            grooming = new LayananGrooming(selectedGrooming, groomingCost);
         }
 
-        // Layanan lama
-        double vaccineCost = chkVaccine.isSelected() ? (100000 + weightSurcharge) : 0;
-        double foodCost = chkFood.isSelected() ? 50000 : 0;
-
-        // [FITUR BARU 2] Layanan tambahan baru (surcharge berlaku pada checkup & bedah)
-        double checkupCost = chkCheckup.isSelected() ? (75000 + weightSurcharge) : 0;
-        double boardingCost = chkBoarding.isSelected() ? 150000 : 0;
-        double bedahCost = chkBedah.isSelected() ? (250000 + weightSurcharge) : 0;
+        final double vaccineCost  = chkVaccine.isSelected()  ? (100000 + surcharge) : 0;
+        final double foodCost     = chkFood.isSelected()     ? 50000 : 0;
+        final double checkupCost  = chkCheckup.isSelected()  ? (75000 + surcharge)  : 0;
+        final double boardingCost = chkBoarding.isSelected() ? 150000 : 0;
+        final double bedahCost    = chkBedah.isSelected()    ? (250000 + surcharge) : 0;
 
         currentTotal = groomingCost + vaccineCost + foodCost + checkupCost + boardingCost + bedahCost;
 
-        // --- UPDATE SUMMARY UI ---
-        StringBuilder sb = new StringBuilder();
-        sb.append("PASIEN:\n");
-        sb.append(String.format("  Nama    : %s (%s)\n", currentPasien.getNamaPeliharaan(),
-                currentPasien.getJenisHewan()));
-        sb.append(String.format("  Owner   : %s\n", currentPasien.getNamaOwner()));
-        sb.append(String.format("  Bobot   : %.1f kg\n", currentPasien.getBobotKg()));
-        sb.append(String.format("  Dokter  : %s\n\n", dokter));
+        // Render Invoice Summary
+        final StringBuilder sb = new StringBuilder();
+        sb.append("DATA PASIEN:\n");
+        sb.append(String.format("  Nama Pasien  : %s (%s)\n", pasien.getNamaPeliharaan(), pasien.getJenisHewan()));
+        sb.append(String.format("  Nama Pemilik : %s\n", pasien.getNamaOwner()));
+        sb.append(String.format("  Bobot Tubuh  : %.1f kg\n", pasien.getBobotKg()));
+        sb.append(String.format("  Dokter Jaga  : %s\n\n", dokter));
 
-        sb.append("RINCIAN BIAYA:\n");
-        if (currentGrooming != null) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Grooming (" + currentGrooming.getPaket() + ")",
-                    currentGrooming.getBiayaLayanan()));
+        sb.append("RINCIAN TINDAKAN & BIAYA:\n");
+        if (grooming != null) {
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Grooming (" + grooming.getPaket() + ")", grooming.getBiayaLayanan()));
         }
         if (chkVaccine.isSelected()) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Vaksinasi", vaccineCost));
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Vaksinasi", vaccineCost));
         }
         if (chkFood.isSelected()) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Pakan", foodCost));
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Pakan Khusus", foodCost));
         }
         if (chkCheckup.isSelected()) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Checkup Umum", checkupCost));
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Checkup Umum", checkupCost));
         }
         if (chkBoarding.isSelected()) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Rawat Inap", boardingCost));
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Rawat Inap", boardingCost));
         }
         if (chkBedah.isSelected()) {
-            sb.append(String.format("  %-22s: Rp %,10.0f\n", "Bedah Minor", bedahCost));
+            sb.append(String.format("  • %-22s: Rp %,10.0f\n", "Bedah Minor", bedahCost));
         }
 
-        // Keterangan surcharge
-        boolean hasSurchargeableService = (currentGrooming != null || chkVaccine.isSelected()
-                || chkCheckup.isSelected() || chkBedah.isSelected());
-        if (weight >= 5.0 && hasSurchargeableService) {
-            sb.append("\n*Surcharge >5kg diterapkan pada layanan medis/grooming.");
+        if (currentTotal == 0) {
+            sb.append("  (Belum ada layanan yang dipilih)\n");
         }
 
-        // Info pembayaran
-        String payMethod = cbPayment.getSelectedItem().toString();
+        final boolean hasSurcharge = (grooming != null || chkVaccine.isSelected() || chkCheckup.isSelected() || chkBedah.isSelected());
+        if (weight >= 5.0 && hasSurcharge) {
+            sb.append("\n*Catatan: Surcharge bobot >5kg (+Rp 20.000) diterapkan.");
+        }
+
+        final String payMethod = cbPayment.getSelectedItem().toString();
         sb.append("\n\nMETODE PEMBAYARAN: ").append(payMethod);
 
         txtSummary.setText(sb.toString());
         lblTotal.setText(String.format("Rp %,.0f", currentTotal));
 
-        // Update kembalian setelah total berubah
         updateKembalian();
     }
 
+    private void updateKembalian() {
+        final String payMethod = cbPayment.getSelectedItem().toString();
+        if ("QRIS".equalsIgnoreCase(payMethod)) {
+            lblKembalianValue.setText("Rp 0");
+            lblKembalianValue.setForeground(UIHelper.COLOR_PRIMARY);
+            revalidateCetakButton();
+            return;
+        }
+
+        final double cash = parseCash();
+        if (txtCashReceived.getText().trim().isEmpty()) {
+            lblKembalianValue.setText("Rp 0");
+            lblKembalianValue.setForeground(UIHelper.COLOR_PRIMARY);
+            btnCetak.setEnabled(false);
+            return;
+        }
+
+        final double kembalian = cash - currentTotal;
+        if (kembalian < 0) {
+            lblKembalianValue.setText("Uang Kurang!");
+            lblKembalianValue.setForeground(new Color(220, 50, 50));
+            btnCetak.setEnabled(false);
+        } else {
+            lblKembalianValue.setText(String.format("Rp %,.0f", kembalian));
+            lblKembalianValue.setForeground(UIHelper.COLOR_PRIMARY);
+            revalidateCetakButton();
+        }
+    }
+
+    private void revalidateCetakButton() {
+        if (!isFormValid() || currentTotal <= 0) {
+            btnCetak.setEnabled(false);
+            return;
+        }
+        final String payMethod = cbPayment.getSelectedItem().toString();
+        if ("Cash".equalsIgnoreCase(payMethod)) {
+            final double cash = parseCash();
+            btnCetak.setEnabled(cash >= currentTotal);
+        } else {
+            btnCetak.setEnabled(true);
+        }
+    }
+
+    private boolean isFormValid() {
+        final String owner = txtOwner.getText().trim();
+        final String petName = txtPetName.getText().trim();
+        final String weightText = txtWeight.getText().trim();
+        if (owner.isEmpty() || petName.isEmpty() || weightText.isEmpty()) return false;
+        try {
+            return Double.parseDouble(weightText) > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private double parseCash() {
+        try {
+            final String text = txtCashReceived.getText().trim().replace(",", "").replace(".", "");
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private void setupQrisBarcodeImage() {
+        final ImageIcon scaledIcon = UIHelper.loadAndScaleImage(QRIS_IMAGE_PATH, QRIS_BARCODE_WIDTH, QRIS_BARCODE_HEIGHT);
+        if (scaledIcon != null) {
+            lblQrisBarcode.setIcon(scaledIcon);
+            lblQrisBarcode.setText(null);
+            lblQrisBarcode.setBorder(BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true));
+        } else {
+            lblQrisBarcode.setIcon(null);
+            lblQrisBarcode.setText("<html><center><b>[QRIS Code Placeholder]</b><br>"
+                    + "<font size='2' color='#1b3554'>File: " + QRIS_IMAGE_PATH + "</font></center></html>");
+            lblQrisBarcode.setFont(new Font(UIHelper.FONT_FAMILY, Font.PLAIN, 12));
+            lblQrisBarcode.setPreferredSize(new Dimension(QRIS_BARCODE_WIDTH, QRIS_BARCODE_HEIGHT));
+            lblQrisBarcode.setBorder(BorderFactory.createDashedBorder(UIHelper.COLOR_BORDER_DARK, 2, 4, 4, true));
+        }
+    }
+
+    // =========================================================================
+    // UI COMPONENT HELPERS
+    // =========================================================================
+    private JPanel createSectionHeader(String title, String subtitle) {
+        final JPanel pnl = new JPanel(new BorderLayout());
+        pnl.setBackground(UIHelper.COLOR_CARD_ACCENT);
+        pnl.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIHelper.COLOR_BORDER, 1, true),
+                new EmptyBorder(10, 16, 10, 16)
+        ));
+        pnl.putClientProperty("FlatLaf.style", "arc: 14");
+
+        final JLabel lblTitle = UIHelper.createHeaderLabel(title);
+        final JLabel lblSub = new JLabel(subtitle);
+        lblSub.setFont(new Font(UIHelper.FONT_FAMILY, Font.PLAIN, 12));
+        lblSub.setForeground(UIHelper.COLOR_PRIMARY_DARK);
+
+        pnl.add(lblTitle, BorderLayout.NORTH);
+        pnl.add(lblSub, BorderLayout.SOUTH);
+        return pnl;
+    }
+
+    private JTextField createStyledTextField() {
+        final JTextField field = new JTextField();
+        field.setPreferredSize(new Dimension(field.getPreferredSize().width, 36));
+        field.putClientProperty("FlatLaf.style", "arc: 12");
+        return field;
+    }
+
+    private JComboBox<String> createStyledComboBox(String[] items) {
+        final JComboBox<String> combo = new JComboBox<>(items);
+        combo.setPreferredSize(new Dimension(combo.getPreferredSize().width, 36));
+        combo.putClientProperty("FlatLaf.style", "arc: 12");
+        return combo;
+    }
+
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, String labelText, JComponent comp) {
+        gbc.gridx = 0;
+        gbc.gridy = formRow;
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        final JLabel label = new JLabel(labelText);
+        UIHelper.styleFormLabel(label);
+        panel.add(label, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = ++formRow;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(2, 10, 8, 10);
+        panel.add(comp, gbc);
+
+        gbc.insets = new Insets(6, 10, 6, 10);
+        formRow++;
+    }
+
+    // =========================================================================
+    // MAIN METHOD: KONFIGURASI UIMANAGER.PUT() SEBELUM INISIALISASI FRAME
+    // =========================================================================
     public static void main(String[] args) {
+        // 1. Eksekusi konfigurasi UIManager.put() dan inisialisasi tema FlatLaf
+        // SEBELUM membuat instance JFrame/komponen Swing apapun.
+        UIHelper.setupFlatLaf();
+
+        // 2. Jalankan aplikasi di Event Dispatch Thread (EDT)
         SwingUtilities.invokeLater(() -> new PetCareGUI().setVisible(true));
     }
 }
